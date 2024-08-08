@@ -1,0 +1,22 @@
+services:
+  my-server:
+    build: .
+    ports:
+      - 8080:8080
+    depends_on:
+      my-db:
+        condition: service_healthy
+
+  my-db:
+    image: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD : pwd1234
+      MYSQL_DATABASE: mydb
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+    ports:
+      - 3306:3306
+    healthcheck:
+      test: ["CMD","mysqladmin","ping"]
+      interval: 5s
+      retries: 10
