@@ -1,6 +1,8 @@
 services:
   my-spring-server:
-    build: .
+    build:
+      context : .
+      dockerfile: Dockerfile
     ports:
       - 8080:8080
     depends_on:
@@ -10,12 +12,12 @@ services:
   my-ecommercedb:
     image: mysql
     environment:
-      MYSQL_ROOT_PASSWORD : pwd1234
-      MYSQL_DATABASE: ecommercedb
+      MYSQL_ROOT_PASSWORD : ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
     volumes:
       - ./mysql_data:/var/lib/mysql
-    ports:
-      - 3306:3306
+#    ports:
+#      - 3306:3306
     healthcheck:
       test: ["CMD","mysqladmin","ping"]
       interval: 5s

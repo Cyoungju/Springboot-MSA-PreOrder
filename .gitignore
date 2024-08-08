@@ -38,3 +38,4 @@ out/
 
 ### add ###
 application.properties
+mysql_data/
