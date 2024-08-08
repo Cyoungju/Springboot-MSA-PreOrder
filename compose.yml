@@ -1,17 +1,17 @@
 services:
-  my-server:
+  my-spring-server:
     build: .
     ports:
       - 8080:8080
     depends_on:
-      my-db:
+      my-ecommercedb:
         condition: service_healthy
 
-  my-db:
+  my-ecommercedb:
     image: mysql
     environment:
       MYSQL_ROOT_PASSWORD : pwd1234
-      MYSQL_DATABASE: mydb
+      MYSQL_DATABASE: ecommercedb
     volumes:
       - ./mysql_data:/var/lib/mysql
     ports:
