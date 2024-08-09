@@ -1,8 +1,8 @@
-package com.example.ecommerceproject.config;
+package com.example.ecommerceproject.core.config;
 
-import com.example.ecommerceproject.jwt.JwtFilter;
-import com.example.ecommerceproject.jwt.JwtUtil;
-import com.example.ecommerceproject.jwt.LoginFilter;
+import com.example.ecommerceproject.core.jwt.JwtFilter;
+import com.example.ecommerceproject.core.jwt.JwtUtil;
+import com.example.ecommerceproject.core.jwt.LoginFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -79,7 +79,7 @@ public class SecurityConfig {
         //경로별 인가 작업
         http
                 .authorizeHttpRequests((auth) -> auth
-                        .requestMatchers("/login", "/", "/join").permitAll()
+                        .requestMatchers("/login", "/", "/api/user/sign-up").permitAll()
                         .requestMatchers("/admin").hasRole("ADMIN")
                         .anyRequest().authenticated());
         http
