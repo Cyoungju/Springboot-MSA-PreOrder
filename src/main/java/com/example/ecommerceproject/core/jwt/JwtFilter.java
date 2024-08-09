@@ -43,7 +43,6 @@ public class JwtFilter extends OncePerRequestFilter {
 
         //토큰 소멸 시간 검증
         if (jwtUtil.isExpired(token)) {
-
             System.out.println("token expired");
             filterChain.doFilter(request, response);
 
@@ -53,16 +52,31 @@ public class JwtFilter extends OncePerRequestFilter {
 
         //토큰에서 username과 role 획득
         String username = jwtUtil.getUsername(token);
-        String role = jwtUtil.getRole(token);
+        String role = jwtUtil.getRole(token); //ROLE_USER
+
+        if (role != null && role.startsWith("ROLE_")) {
+            role = role.substring(5); // "ROLE_"의 길이인 5를 사용하여 접두사를 제거
+        }
+        MemberRole memberRole = MemberRole.USER;
+
+        if (role != null) {
+            switch (role) {
+                case "USER":
+                    memberRole = MemberRole.USER;
+                case "ADMIN":
+                    memberRole = MemberRole.ADMIN;
+                case "MANAGER":
+                    memberRole = MemberRole.MANAGER;
+            }
+        }
 
         //member 생성하여 값 set
         Member member = Member.builder()
                 .email(username)
                 .password("temppassword")
                 .build();
-
         // 기본 사용자 - defalt
-        member.addRole(MemberRole.valueOf(role));
+        member.addRole(memberRole);
 
         //UserDetails에 회원 정보 객체 담기
         CustomUserDetails customUserDetails = new CustomUserDetails(member);
@@ -73,7 +87,6 @@ public class JwtFilter extends OncePerRequestFilter {
         SecurityContextHolder.getContext().setAuthentication(authToken);
 
         filterChain.doFilter(request, response);
-
 
     }
 }

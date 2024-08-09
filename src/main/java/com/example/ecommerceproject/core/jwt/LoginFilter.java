@@ -17,22 +17,27 @@ import java.util.Iterator;
 
 // formLogin disable 했기 때문에 UsernamePasswordAuthenticationFilter가 작동 하지 않음 -> 커스텀 필터 작성
 
-@RequiredArgsConstructor
+
 public class LoginFilter extends UsernamePasswordAuthenticationFilter  {
 
     private final AuthenticationManager authenticationManager;
 
     private final JwtUtil jwtUtil;
 
+    public LoginFilter (AuthenticationManager authenticationManager, JwtUtil jwtUtil){
+        this.authenticationManager = authenticationManager;
+        this.jwtUtil = jwtUtil;
+    }
+
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
 
         //클라이언트 요청에서 username, password 추출
-        String username = obtainUsername(request);
+        String email = request.getParameter("email");
         String password = obtainPassword(request);
 
         //스프링 시큐리티에서 username과 password를 검증하기 위해서는 token에 담아야 함
-        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(username, password, null);
+        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(email, password, null);
 
         //token에 담은 검증을 위한 AuthenticationManager로 전달
         return authenticationManager.authenticate(authToken);
