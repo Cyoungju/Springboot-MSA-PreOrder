@@ -4,6 +4,7 @@ import com.example.ecommerceproject.member.entity.CustomUserDetails;
 import com.example.ecommerceproject.member.entity.Member;
 import com.example.ecommerceproject.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -12,16 +13,18 @@ import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
 @Service
+@Log4j2
 public class CustomUserDetailsService implements UserDetailsService {
 
     private final MemberRepository memberRepository;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Member memberData = memberRepository.findAllByEmail(username);
-        if(memberData!= null){
+        Member memberData = memberRepository.findByEmail(username);
+        if (memberData != null) {
+            //UserDetails에 담아서 return하면 AutneticationManager가 검증 함
             return new CustomUserDetails(memberData);
         }
-        return null;
+        throw new UsernameNotFoundException("User not found with username: " + username);
     }
 }

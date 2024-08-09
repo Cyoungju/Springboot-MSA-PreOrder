@@ -1,6 +1,5 @@
-package com.example.ecommerceproject.jwt;
+package com.example.ecommerceproject.core.jwt;
 
-import com.example.ecommerceproject.member.dto.JoinDto;
 import com.example.ecommerceproject.member.entity.CustomUserDetails;
 import com.example.ecommerceproject.member.entity.Member;
 import com.example.ecommerceproject.member.entity.MemberRole;
@@ -57,11 +56,13 @@ public class JwtFilter extends OncePerRequestFilter {
         String role = jwtUtil.getRole(token);
 
         //member 생성하여 값 set
-        JoinDto joinDto = new JoinDto();
-        joinDto.setEmail(username);
-        joinDto.setPassword("temppassword");
-        joinDto.setRole(role);
-        Member member = joinDto.toEntity();
+        Member member = Member.builder()
+                .email(username)
+                .password("temppassword")
+                .build();
+
+        // 기본 사용자 - defalt
+        member.addRole(MemberRole.valueOf(role));
 
         //UserDetails에 회원 정보 객체 담기
         CustomUserDetails customUserDetails = new CustomUserDetails(member);

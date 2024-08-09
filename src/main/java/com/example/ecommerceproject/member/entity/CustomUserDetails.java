@@ -1,29 +1,25 @@
 package com.example.ecommerceproject.member.entity;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.stream.Collectors;
 
 
-@RequiredArgsConstructor
 public class CustomUserDetails implements UserDetails {
-    private final Member member;
+    private Member member;
 
+    public CustomUserDetails(Member member){
+        this.member = member;
+    }
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        Collection<GrantedAuthority> collection = new ArrayList<>();
-        collection.add(new GrantedAuthority() {
-            @Override
-            public String getAuthority() {
-                return member.getRole().getAuthority();
-            }
-        });
-
-        return collection;
+        return member.getMemberRoleList().stream()
+                .map(role -> (GrantedAuthority) () -> "ROLE_" + role.name())
+                .collect(Collectors.toList());
     }
+
 
     @Override
     public String getPassword() {

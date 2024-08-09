@@ -12,8 +12,8 @@ services:
   my-ecommercedb:
     image: mysql
     environment:
-      MYSQL_ROOT_PASSWORD : ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_ROOT_PASSWORD : pwd1234
+      MYSQL_DATABASE: ecommercedb
     volumes:
       - ./mysql_data:/var/lib/mysql
 #    ports:

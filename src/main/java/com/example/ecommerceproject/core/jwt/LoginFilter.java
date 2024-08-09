@@ -1,4 +1,4 @@
-package com.example.ecommerceproject.jwt;
+package com.example.ecommerceproject.core.jwt;
 
 import com.example.ecommerceproject.member.entity.CustomUserDetails;
 import jakarta.servlet.FilterChain;
@@ -18,7 +18,7 @@ import java.util.Iterator;
 // formLogin disable 했기 때문에 UsernamePasswordAuthenticationFilter가 작동 하지 않음 -> 커스텀 필터 작성
 
 @RequiredArgsConstructor
-public class LoginFilter extends UsernamePasswordAuthenticationFilter {
+public class LoginFilter extends UsernamePasswordAuthenticationFilter  {
 
     private final AuthenticationManager authenticationManager;
 
