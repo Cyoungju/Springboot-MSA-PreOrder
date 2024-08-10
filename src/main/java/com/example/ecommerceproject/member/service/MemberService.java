@@ -5,6 +5,5 @@ import org.springframework.stereotype.Service;
 
 @Service
 public interface MemberService {
-    public void joinProcess(MemberDto memberDto);
-
+    void joinProcess(MemberDto memberDto);
 }
