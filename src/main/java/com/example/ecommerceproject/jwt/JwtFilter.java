@@ -1,4 +1,4 @@
-package com.example.ecommerceproject.core.jwt;
+package com.example.ecommerceproject.jwt;
 
 import com.example.ecommerceproject.member.entity.CustomUserDetails;
 import com.example.ecommerceproject.member.entity.Member;
