@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Map;
 
 @RequiredArgsConstructor
 @Service
@@ -21,41 +20,36 @@ public class MemberServiceImpl implements MemberService{
 
     @Override
     public void joinProcess(MemberDto memberDto){
-        try{
-            // 이메일 암호화
-            String originalEmail = memberDto.getEmail();
-            String encryptedEmail = encryptionUtil.encrypt(originalEmail);
 
-            // 암호화된 이메일과 데이터베이스의 이메일 비교
-            Member existingMember = memberRepository.findByEmail(encryptedEmail);
-            boolean existEmail = (existingMember != null);
+        // 이메일 암호화
+        String originalEmail = memberDto.getEmail();
+        String encryptedEmail = encryptionUtil.encrypt(originalEmail);
+
+        // 암호화된 이메일과 데이터베이스의 이메일 비교
+        Member existingMember = memberRepository.findByEmail(encryptedEmail);
+        boolean existEmail = (existingMember != null);
 
 
-            //이미 존재하는 이메일인 경우
-            if(existEmail){
-                throw new CustomException("이미 존재하는 아이디입니다!");
-            }
-
-            // 비밀번호 암호화
-            String encodedPassword = passwordEncoder.encode(memberDto.getPassword());
-
-            Member member = Member.builder()
-                    .email(encryptedEmail)
-                    .password(encodedPassword)
-                    .username(encryptionUtil.encrypt(memberDto.getUsername()))
-                    .phone(encryptionUtil.encrypt(memberDto.getPhone()))
-                    .address(encryptionUtil.encrypt(memberDto.getAddress()))
-                    .build();
-
-            // 기본 사용자 - defalt
-            member.addRole(MemberRole.USER);
-
-            memberRepository.save(member);
-
-        }catch (CustomException e){
-            throw new CustomException(e.getMessage());
-        }catch (Exception e){
-            throw new CustomException("회원가입에 실패했습니다.");
+        //이미 존재하는 이메일인 경우
+        if(existEmail){
+            throw new CustomException("이미 존재하는 아이디입니다!");
         }
+
+        // 비밀번호 암호화
+        String encodedPassword = passwordEncoder.encode(memberDto.getPassword());
+
+        Member member = Member.builder()
+                .email(encryptedEmail)
+                .password(encodedPassword)
+                .username(encryptionUtil.encrypt(memberDto.getUsername()))
+                .phone(encryptionUtil.encrypt(memberDto.getPhone()))
+                .address(encryptionUtil.encrypt(memberDto.getAddress()))
+                .build();
+
+        // 기본 사용자 - defalt
+        member.addRole(MemberRole.USER);
+
+        memberRepository.save(member);
+
     }
 }

@@ -1,4 +1,4 @@
-package com.example.ecommerceproject.core.jwt;
+package com.example.ecommerceproject.jwt;
 
 import io.jsonwebtoken.Jwts;
 import org.springframework.beans.factory.annotation.Value;

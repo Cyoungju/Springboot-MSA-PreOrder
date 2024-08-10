@@ -37,7 +37,7 @@ public class Member {
     private String address;
 
     @ElementCollection(fetch = FetchType.LAZY)
-    @Builder.Default // 처음부터 사용할수 있도록 초기롸 -> null값이 나오지 않게 하기 위해
+    @Builder.Default // 처음부터 사용할수 있도록 초기화 -> null값이 나오지 않게 하기 위해
     private List<MemberRole> memberRoleList = new ArrayList<>();
 
     public void addRole(MemberRole memberRole){
