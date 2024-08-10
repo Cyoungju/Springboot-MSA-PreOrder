@@ -1,6 +1,7 @@
 package com.example.ecommerceproject.member.service;
 
 import com.example.ecommerceproject.core.exception.CustomException;
+import com.example.ecommerceproject.member.dto.VerificationCodeStore;
 import com.example.ecommerceproject.member.entity.MemberRole;
 import com.example.ecommerceproject.member.dto.MemberDto;
 import com.example.ecommerceproject.member.entity.Member;
@@ -17,6 +18,7 @@ public class MemberServiceImpl implements MemberService{
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final EncryptionUtil encryptionUtil;
+    private final VerificationCodeStore verificationCodeStore;
 
     @Override
     public void joinProcess(MemberDto memberDto){
@@ -35,6 +37,16 @@ public class MemberServiceImpl implements MemberService{
             throw new CustomException("이미 존재하는 아이디입니다!");
         }
 
+        //이메일 인증 확인 - 아닐경우 에러 메시지
+        // ==============================================
+        // throw new CustomException("이메일 인증 해주세요!");
+        // 통과 된다면 회원가입 진행
+        // 이메일 인증 확인 - 아닐경우 에러 메시지
+        Boolean verification = verificationCodeStore.getVerificationStatus(originalEmail); // 인증 상태를 확인
+        System.out.println(verification);
+
+        // ==============================================
+
         // 비밀번호 암호화
         String encodedPassword = passwordEncoder.encode(memberDto.getPassword());
 
@@ -50,6 +62,8 @@ public class MemberServiceImpl implements MemberService{
         member.addRole(MemberRole.USER);
 
         memberRepository.save(member);
+        // 인증 번호 삭제
+        verificationCodeStore.removeCode(originalEmail);
 
     }
 }
