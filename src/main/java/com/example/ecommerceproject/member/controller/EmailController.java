@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/mail")
 public class EmailController {
-
     private final EmailService emailService;
     private final VerificationCodeStore verificationCodeStore;
 
