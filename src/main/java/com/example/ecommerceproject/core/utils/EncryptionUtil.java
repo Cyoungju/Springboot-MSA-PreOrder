@@ -33,12 +33,18 @@ public class EncryptionUtil {
     // Base64로 인코딩된 비밀 키를 반환하는 메서드
     private SecretKey getSecretKey(String base64EncodedKey) {
         byte[] decodedKey = Base64.getDecoder().decode(base64EncodedKey);
+        if (decodedKey.length != 32) { // 32 bytes = 256 bits
+            throw new IllegalArgumentException("키 길이가 256 bits가 아닙니다");
+        }
         return new SecretKeySpec(decodedKey, 0, decodedKey.length, "AES");
     }
 
     // Base64로 인코딩된 IV를 반환하는 메서드
     private IvParameterSpec getIv(String base64EncodedIv) {
         byte[] decodedIv = Base64.getDecoder().decode(base64EncodedIv);
+        if (decodedIv.length != 16) { // 16 바이트 = 128 비트
+            throw new IllegalArgumentException("IV 길이가 128 비트(16 바이트)가 아닙니다.");
+        }
         return new IvParameterSpec(decodedIv);
     }
 

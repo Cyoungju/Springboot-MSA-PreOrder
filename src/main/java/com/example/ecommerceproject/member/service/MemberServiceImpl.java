@@ -10,6 +10,7 @@ import com.example.ecommerceproject.core.utils.EncryptionUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
 @RequiredArgsConstructor
@@ -20,6 +21,7 @@ public class MemberServiceImpl implements MemberService{
     private final EncryptionUtil encryptionUtil;
     private final VerificationCodeStore verificationCodeStore;
 
+    @Transactional
     @Override
     public void joinProcess(MemberDto memberDto){
 
@@ -43,7 +45,7 @@ public class MemberServiceImpl implements MemberService{
         // 통과 된다면 회원가입 진행
         // 이메일 인증 확인 - 아닐경우 에러 메시지
         Boolean verification = verificationCodeStore.getVerificationStatus(originalEmail); // 인증 상태를 확인
-        System.out.println(verification);
+
 
         // ==============================================
 
