@@ -44,7 +44,7 @@ public class MemberServiceImpl implements MemberService{
         // throw new CustomException("이메일 인증 해주세요!");
         // 통과 된다면 회원가입 진행
         // 이메일 인증 확인 - 아닐경우 에러 메시지
-        Boolean verification = verificationCodeStore.getVerificationStatus(originalEmail); // 인증 상태를 확인
+        //verificationCodeStore.getVerificationStatus(originalEmail); // 인증 상태를 확인
 
 
         // ==============================================
@@ -58,6 +58,7 @@ public class MemberServiceImpl implements MemberService{
                 .username(encryptionUtil.encrypt(memberDto.getUsername()))
                 .phone(encryptionUtil.encrypt(memberDto.getPhone()))
                 .address(encryptionUtil.encrypt(memberDto.getAddress()))
+                .detailAdr(encryptionUtil.encrypt(memberDto.getDetailAdr()))
                 .build();
 
         // 기본 사용자 - defalt
@@ -65,7 +66,7 @@ public class MemberServiceImpl implements MemberService{
 
         memberRepository.save(member);
         // 인증 번호 삭제
-        verificationCodeStore.removeCode(originalEmail);
+        //verificationCodeStore.removeCode(originalEmail);
 
     }
 }

@@ -3,13 +3,14 @@ package com.example.ecommerceproject.product.service;
 import com.example.ecommerceproject.core.exception.CustomException;
 import com.example.ecommerceproject.product.dto.ProductDto;
 import com.example.ecommerceproject.product.entity.Product;
+import com.example.ecommerceproject.product.entity.ProductStatus;
 import com.example.ecommerceproject.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Transactional(readOnly = true) // 읽기 전용
 @RequiredArgsConstructor
@@ -19,17 +20,20 @@ public class ProductServiceImpl implements ProductService{
     private final ProductRepository productRepository;
 
     @Override
-    public List<ProductDto> findAll() {
+    public Page<ProductDto> findAll(ProductStatus productStatus, Pageable pageable) {
 
-        List<Product> products = productRepository.findAll();
+        Page<ProductDto> productsDto = findByProductStatus(productStatus, pageable);
 
-        if(products.isEmpty()){
+        if(productsDto.isEmpty()){
             throw new CustomException("해당 상품이 비어있습니다!");
         }
 
-        List<ProductDto> productDtos = products.stream().map(ProductDto::new).collect(Collectors.toList());
+        return productsDto;
+    }
 
-        return productDtos;
+    private Page<ProductDto> findByProductStatus(ProductStatus productStatus, Pageable pageable){
+        Page<Product> products = productRepository.findByProductStatus(productStatus, pageable);
+        return products.map(ProductDto::new);
     }
 
     @Override
