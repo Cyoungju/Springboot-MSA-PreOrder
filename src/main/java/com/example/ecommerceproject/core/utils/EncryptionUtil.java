@@ -50,6 +50,9 @@ public class EncryptionUtil {
 
     // 데이터를 AES 알고리즘을 사용하여 암호화하는 메서드
     public String encrypt(String data) {
+        if (data == null) {
+            return null;  // 데이터가 없을 때는 그냥 null 반환
+        }
         byte[] encryptedBytes;
         try {
             Cipher cipher = Cipher.getInstance(ALGORITHM);

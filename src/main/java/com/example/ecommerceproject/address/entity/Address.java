@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Getter
 @Entity
+@Table(name = "address")
 public class Address {
 
     @Id
@@ -27,6 +28,8 @@ public class Address {
 
     @Column(length = 100)
     private String phone;
+
+    private boolean defaultAdr;
 
     @ManyToOne(fetch = FetchType.LAZY)
     private Member member;

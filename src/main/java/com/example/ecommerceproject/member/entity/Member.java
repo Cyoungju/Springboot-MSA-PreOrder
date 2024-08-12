@@ -40,6 +40,8 @@ public class Member {
     private String detailAdr;
 
     @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name="member_role_list")
+    @Enumerated(EnumType.STRING) // 열거형의 값을 문자열로 저장
     @Builder.Default // 처음부터 사용할수 있도록 초기화 -> null값이 나오지 않게 하기 위해
     private List<MemberRole> memberRoleList = new ArrayList<>();
 
@@ -52,13 +54,14 @@ public class Member {
     }
 
     @Builder
-    public Member(Long id, String email, String password, String username, String phone, String address, List<MemberRole> memberRoleList) {
+    public Member(Long id, String email, String password, String username, String phone, String address,String detailAdr, List<MemberRole> memberRoleList) {
         this.id = id;
         this.email = email;
         this.password = password;
         this.username = username;
         this.phone = phone;
         this.address = address;
+        this.detailAdr = detailAdr;
         this.memberRoleList = memberRoleList;
     }
 

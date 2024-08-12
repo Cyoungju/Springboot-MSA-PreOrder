@@ -31,24 +31,9 @@ public class MemberDto {
 
     @NotEmpty
     private String address;
+    private String detailAdr;
 
     @Builder.Default
     private List<MemberRole> memberRoleList = new ArrayList<>();
 
-
-//    @Builder
-//    public Member toEntity() {
-//        Member member = Member.builder()
-//                .email(EncryptionUtil.encrypt(email))
-//                .password(password)
-//                .username(EncryptionUtil.encrypt(username))
-//                .phone(EncryptionUtil.encrypt(phone))
-//                .address(EncryptionUtil.encrypt(address))
-//                .build();
-//
-//        // 기본 사용자 - defalt
-//        member.addRole(MemberRole.USER);
-//
-//        return member;
-//    }
 }

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -57,7 +58,9 @@ public class SecurityConfig {
         //경로별 인가 작업
         http
                 .authorizeHttpRequests((auth) -> auth
-                        .requestMatchers("/auth/**", "/","/mail/**","/api/product/**").permitAll()
+                        .requestMatchers("/auth/**", "/","/mail/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll() // product get 요청만 접근허용
+                        .requestMatchers(HttpMethod.GET, "/api/products").permitAll() // product get 요청만 접근허용
                         .requestMatchers("/admin").hasRole("ADMIN")
                         .anyRequest().authenticated());
 
