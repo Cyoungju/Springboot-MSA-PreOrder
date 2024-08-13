@@ -69,4 +69,18 @@ public class MemberServiceImpl implements MemberService{
         //verificationCodeStore.removeCode(originalEmail);
 
     }
+
+    @Override
+    public Long memberByEmail(String email) {
+        Member member = memberRepository.findByEmail(email);
+
+        Long memberId = member.getId();
+
+        return memberId;
+    }
+
+    @Override
+    public Member getMemberByEmail(String email) {
+        return memberRepository.findByEmail(email);
+    }
 }

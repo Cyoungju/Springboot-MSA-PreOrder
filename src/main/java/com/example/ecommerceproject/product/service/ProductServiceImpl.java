@@ -44,4 +44,17 @@ public class ProductServiceImpl implements ProductService{
 
         return new ProductDto(product);
     }
+
+    @Override
+    public Product findByIdProduct(Long id) {
+        Product product = productRepository.findById(id).orElseThrow(
+                () -> new CustomException("해당 상품을 찾을수 없습니다.")
+        );
+
+        if(product.getProductStatus() == ProductStatus.AVAILABLE){
+            return product;
+        }else {
+            throw new CustomException("해당 상품은 현재 구매할수 없습니다.");
+        }
+    }
 }
