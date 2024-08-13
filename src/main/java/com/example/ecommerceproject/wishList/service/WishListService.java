@@ -4,6 +4,7 @@ import com.example.ecommerceproject.wishList.dto.WishListItemDto;
 import com.example.ecommerceproject.wishList.dto.WishListItemListDto;
 import com.example.ecommerceproject.wishList.dto.WishListResponseDto;
 import com.example.ecommerceproject.wishList.entity.WishList;
+import com.example.ecommerceproject.wishList.entity.WishListItem;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,4 +19,11 @@ public interface WishListService {
 
     // 상품 삭제 - 장바구니에서 삭제버튼 클릭
     WishListResponseDto deleteWishListItem(Long wishListId, String email);
+
+    // 이메일을 통해 WishList를 찾기
+    WishList findByMemberEmail(String email);
+
+    List<WishListItem> findAllWishListItem(Long wishListId);
+
+    void deleteId(Long wishListId);
 }

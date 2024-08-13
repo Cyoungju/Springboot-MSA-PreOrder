@@ -35,7 +35,6 @@ public class WishListServiceImpl implements WishListService{
     // 전체 상품 조회
     @Override
     public WishListResponseDto wishList(String email) {
-        System.out.println(email+"email!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         Long memberId = memberService.memberByEmail(email);
         List<WishListItem> items = wishListItemRepository.findByWishListMemberId(memberId); // ID로 아이템 조회
 
@@ -59,8 +58,7 @@ public class WishListServiceImpl implements WishListService{
         Long productId = wishListItemDto.getProductId();
 
         // 이메일을 통해 WishList를 찾기
-        WishList wishList = wishListRepository.findByMember_Email(email)
-                .orElseThrow(() -> new CustomException("위시리스트가 비어있습니다.")); //없을경우 wishList 생성
+        WishList wishList = findByMemberEmail(email);
 
         // WishList에 해당하는 productID를 가진 wishListItem이 있는지 확인
         Optional<WishListItem> wishListItemOptional = wishListItemRepository.findByWishListAndProductId(wishList, productId);
@@ -131,6 +129,27 @@ public class WishListServiceImpl implements WishListService{
 
         wishListItemRepository.deleteById(wishListItemId);
         return wishList(email);
+    }
+
+    //WishListId를 통해 WishListItem찾기
+    @Override
+    public List<WishListItem> findAllWishListItem(Long wishListId){
+        return wishListItemRepository.findByWishListId(wishListId);
+    }
+
+    @Override
+    public void deleteId(Long wishListId) {
+        // 주어진 wishListId를 기준으로 WishListItem 삭제
+        wishListItemRepository.deleteByWishListId(wishListId);
+    }
+
+
+    // 이메일을 통해 WishList를 찾기
+    @Override
+    public WishList findByMemberEmail(String email){
+        WishList wishList = wishListRepository.findByMember_Email(email)
+                .orElseGet(() -> createNewWishList(email));
+        return wishList;
     }
 
 }

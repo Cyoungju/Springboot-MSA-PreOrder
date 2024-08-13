@@ -11,7 +11,7 @@ import lombok.*;
 @Getter
 @Entity
 @Builder
-@Table(name="WishListItem")
+@Table(name="wishListItem")
 @ToString(exclude = {"wishList","product"})
 public class WishListItem {
     @Id
