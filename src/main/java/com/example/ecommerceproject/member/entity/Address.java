@@ -1,5 +1,6 @@
 package com.example.ecommerceproject.member.entity;
 
+import com.example.ecommerceproject.core.utils.BaseTimeEntity;
 import com.example.ecommerceproject.member.entity.Member;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -11,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @Entity
 @Table(name = "address")
-public class Address {
+public class Address extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
