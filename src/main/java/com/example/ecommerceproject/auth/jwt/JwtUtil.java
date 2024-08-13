@@ -1,4 +1,4 @@
-package com.example.ecommerceproject.jwt;
+package com.example.ecommerceproject.auth.jwt;
 
 import io.jsonwebtoken.Jwts;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,6 +23,10 @@ public class JwtUtil {
         return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload().get("username", String.class);
     }
 
+    public String getCategory(String token){
+        return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload().get("category",String.class);
+    }
+
     // 검증
     public String getRole(String token) {
         return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload().get("role", String.class);
@@ -34,8 +38,9 @@ public class JwtUtil {
     }
 
     // 토큰생성
-    public String createJwt(String username, String role, Long expiredMs) {
+    public String createJwt(String category,String username, String role, Long expiredMs) {
         return Jwts.builder()
+                .claim("category", category) // AccessToken 인지 RefreshToken 인지 작성
                 .claim("username", username)
                 .claim("role", role)
                 .issuedAt(new Date(System.currentTimeMillis()))

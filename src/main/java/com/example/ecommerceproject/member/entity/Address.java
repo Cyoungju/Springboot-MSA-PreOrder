@@ -1,4 +1,4 @@
-package com.example.ecommerceproject.address.entity;
+package com.example.ecommerceproject.member.entity;
 
 import com.example.ecommerceproject.member.entity.Member;
 import jakarta.persistence.*;
