@@ -1,4 +1,4 @@
-package com.example.ecommerceproject.address.controller;
+package com.example.ecommerceproject.member.controller;
 
 
 import org.springframework.web.bind.annotation.RestController;

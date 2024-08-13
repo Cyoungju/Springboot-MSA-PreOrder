@@ -1,8 +1,10 @@
-package com.example.ecommerceproject.core.config;
+package com.example.ecommerceproject.auth.config;
 
-import com.example.ecommerceproject.jwt.JwtFilter;
-import com.example.ecommerceproject.jwt.JwtUtil;
-import com.example.ecommerceproject.jwt.LoginFilter;
+import com.example.ecommerceproject.auth.jwt.CustomLogoutFilter;
+import com.example.ecommerceproject.auth.jwt.JwtFilter;
+import com.example.ecommerceproject.auth.jwt.JwtUtil;
+import com.example.ecommerceproject.auth.jwt.LoginFilter;
+import com.example.ecommerceproject.auth.repository.RefreshRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -27,6 +29,8 @@ public class SecurityConfig {
     private final JwtUtil jwtUtil;
 
     private final ObjectMapper objectMapper;
+
+    private final RefreshRepository refreshRepository;
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception{
@@ -58,15 +62,19 @@ public class SecurityConfig {
         //경로별 인가 작업
         http
                 .authorizeHttpRequests((auth) -> auth
-                        .requestMatchers("/auth/**", "/","/mail/**").permitAll()
+                        .requestMatchers("/auth/**","/reissue", "/","/mail/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll() // product get 요청만 접근허용
                         .requestMatchers(HttpMethod.GET, "/api/products").permitAll() // product get 요청만 접근허용
                         .requestMatchers("/admin").hasRole("ADMIN")
                         .anyRequest().authenticated());
 
-        // 필터 설정
-        LoginFilter loginFilter = new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil, objectMapper);
+        // 로그인 필터 설정
+        LoginFilter loginFilter = new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil, objectMapper, refreshRepository);
         loginFilter.setFilterProcessesUrl("/auth/login"); // 로그인 경로 설정
+
+        // 로그아웃 필터설정
+        CustomLogoutFilter customLogoutFilter = new CustomLogoutFilter(jwtUtil,refreshRepository);
+
 
         http
                 .addFilterBefore(new JwtFilter(jwtUtil), LoginFilter.class);
@@ -74,6 +82,10 @@ public class SecurityConfig {
         http
                 .addFilterAt(loginFilter, UsernamePasswordAuthenticationFilter.class);
 
+        // 로그아웃 커스텀 필터 등록
+        http
+                .addFilterBefore(customLogoutFilter, LoginFilter.class);
+        
         //세션 설정
         http
                 .sessionManagement((session) -> session

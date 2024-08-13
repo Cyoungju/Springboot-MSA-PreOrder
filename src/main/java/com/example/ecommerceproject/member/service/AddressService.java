@@ -1,4 +1,4 @@
-package com.example.ecommerceproject.address.service;
+package com.example.ecommerceproject.member.service;
 
 import org.springframework.stereotype.Service;
 
