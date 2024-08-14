@@ -31,6 +31,7 @@ public class MemberDto {
 
     @NotEmpty
     private String address;
+
     private String detailAdr;
 
     @Builder.Default

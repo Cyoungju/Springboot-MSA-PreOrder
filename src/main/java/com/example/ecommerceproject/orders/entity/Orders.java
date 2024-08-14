@@ -33,6 +33,7 @@ public class Orders extends BaseTimeEntity {
     private Member member;
 
     @OneToMany(mappedBy = "orders", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<OrdersItem> ordersItems = new ArrayList<>();
 
     public void changeOrderItem(List<OrdersItem> ordersItems) {
@@ -41,6 +42,8 @@ public class Orders extends BaseTimeEntity {
     public void changeTotalPrice(Long totalPrice){
         this.totalPrice = totalPrice;
     }
-
+    public void changeOrderStatus(OrdersStatus orderStatus) {
+        this.orderStatus = orderStatus;
+    }
 
 }

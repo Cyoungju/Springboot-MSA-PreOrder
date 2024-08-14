@@ -140,7 +140,14 @@ public class WishListServiceImpl implements WishListService{
     @Override
     public void deleteId(Long wishListId) {
         // 주어진 wishListId를 기준으로 WishListItem 삭제
-        wishListItemRepository.deleteByWishListId(wishListId);
+        Optional<WishList> wishListOptional = wishListRepository.findById(wishListId);
+
+
+        if(wishListOptional.isPresent()){
+            WishList wishList = wishListOptional.get();
+            wishListItemRepository.deleteByWishListId(wishListId);
+            wishList.changeTotalPrice(0L);
+        }
     }
 
 
