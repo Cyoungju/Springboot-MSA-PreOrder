@@ -11,7 +11,8 @@ import lombok.*;
 @Entity
 @Builder
 @ToString(exclude = {"orders","product"})
-@Table(name="orderItem")
+@Table(name="orderItem", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"orders_id", "product_id"})})
 public class OrdersItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,8 +25,14 @@ public class OrdersItem {
     private Long count;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "orders_id")
     private Orders orders;
 
-    @OneToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id")
     private Product product;
+
+    public void reQuantity() {
+        product.increaseStock(count);
+    }
 }

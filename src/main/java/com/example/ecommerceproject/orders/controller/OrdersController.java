@@ -42,20 +42,20 @@ public class OrdersController {
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<?> cancelOrder(@PathVariable Long orderId, Principal principal){
+    public ResponseEntity<?> cancelOrder(@PathVariable Long id, Principal principal){
         String username = principal.getName();
 
-        List<OrdersResponseDto> ordersResponseDto = ordersService.canceled(orderId, username);
+        List<OrdersResponseDto> ordersResponseDto = ordersService.canceled(id, username);
 
         ApiUtils.ApiResult<?> apiResult = ApiUtils.success(ordersResponseDto);
         return ResponseEntity.ok(apiResult);
     }
 
     @PatchMapping("/return/{id}")
-    public ResponseEntity<?> returnOrder(@PathVariable Long orderId, Principal principal){
+    public ResponseEntity<?> returnOrder(@PathVariable Long id, Principal principal){
         String username = principal.getName();
 
-        List<OrdersResponseDto> ordersResponseDto = ordersService.returned(orderId, username);
+        List<OrdersResponseDto> ordersResponseDto = ordersService.returned(id, username);
 
         ApiUtils.ApiResult<?> apiResult = ApiUtils.success(ordersResponseDto);
         return ResponseEntity.ok(apiResult);

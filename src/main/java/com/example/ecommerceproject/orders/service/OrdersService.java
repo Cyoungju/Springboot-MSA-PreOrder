@@ -9,10 +9,7 @@ import java.util.List;
 public interface OrdersService {
     List<OrdersResponseDto> getOrderList(String email);
     List<OrdersResponseDto> addOrders(String email);
-
     List<OrdersResponseDto> canceled(Long id, String email);
-
     List<OrdersResponseDto> returned(Long id, String email);
 
-    List<OrdersResponseDto> processReturn(Long id, String email);
 }
