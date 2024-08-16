@@ -1,7 +1,7 @@
 package com.example.ecommerceproject.product.entity;
 
 import com.example.ecommerceproject.core.utils.BaseTimeEntity;
-import com.example.ecommerceproject.member.entity.Member;
+import com.example.ecommerceproject.user.entity.Member;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
