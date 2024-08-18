@@ -1,6 +1,5 @@
 package com.example.orderservice.entity;
 
-import com.example.userservice.entity.Member;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;

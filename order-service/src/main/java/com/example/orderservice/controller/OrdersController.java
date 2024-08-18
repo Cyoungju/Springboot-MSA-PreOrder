@@ -19,10 +19,11 @@ public class OrdersController {
     private final OrdersService ordersService;
 
     @GetMapping
-    public ResponseEntity<?> getList(Principal principal){
-        String username = principal.getName();
+    public ResponseEntity<?> getList(@RequestHeader("X-Authenticated-User") String email){
 
-        List<OrdersResponseDto> ordersResponseDto = ordersService.getOrderList(username);
+        //String username = principal.getName();
+
+        List<OrdersResponseDto> ordersResponseDto = ordersService.getOrderList(email);
 
         ApiUtils.ApiResult<?> apiResult = ApiUtils.success(ordersResponseDto);
         return ResponseEntity.ok(apiResult);

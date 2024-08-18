@@ -13,7 +13,7 @@ import java.security.Principal;
 
 
 @RequiredArgsConstructor
-@RequestMapping("/api/wishList")
+@RequestMapping("/api/orders/wishList")
 @RestController
 public class WishListController {
 

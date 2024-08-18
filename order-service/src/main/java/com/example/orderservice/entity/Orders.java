@@ -13,7 +13,7 @@ import java.util.List;
 @Getter
 @Entity
 @Builder
-@ToString(exclude = "member")
+@ToString()
 @Table(name="orders")
 public class Orders extends BaseTimeEntity {
 
@@ -28,6 +28,7 @@ public class Orders extends BaseTimeEntity {
     private OrdersStatus orderStatus; // 기본값
 
     // TODO: Member API 요청
+    private Long memberId;
     //@ManyToOne(fetch = FetchType.LAZY)
     //private Member member;
 

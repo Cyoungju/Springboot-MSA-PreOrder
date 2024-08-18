@@ -1,8 +1,10 @@
 package com.example.userservice.jwt;
 
 import com.example.userservice.core.exception.CustomException;
+import com.example.userservice.dto.MemberDto;
 import com.example.userservice.entity.Refresh;
 import com.example.userservice.repository.RefreshRepository;
+import com.example.userservice.service.MemberService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
@@ -36,6 +38,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter  {
     private final ObjectMapper objectMapper;
 
     private final RefreshRepository refreshRepository;
+
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {

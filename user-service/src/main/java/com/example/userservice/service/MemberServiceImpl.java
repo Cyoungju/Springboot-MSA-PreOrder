@@ -82,4 +82,11 @@ public class MemberServiceImpl implements MemberService{
     public Member getMemberByEmail(String email) {
         return memberRepository.findByEmail(email);
     }
+
+    @Override
+    public MemberDto getMemberDetailsByEmail(String username) {
+        Member member = memberRepository.findByEmail(username);
+        MemberDto memberDto = new MemberDto();
+        return memberDto.updateDTO(member);
+    }
 }

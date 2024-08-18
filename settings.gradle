@@ -1,4 +1,1 @@
 rootProject.name = 'ecommerce-project'
-include 'order-service'
-include 'user-service'
-include 'product-service'
