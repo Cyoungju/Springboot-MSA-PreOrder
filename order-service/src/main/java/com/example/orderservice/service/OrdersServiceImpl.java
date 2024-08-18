@@ -1,5 +1,7 @@
 package com.example.orderservice.service;
 
+import com.example.orderservice.client.MemberServiceClient;
+import com.example.orderservice.dto.MemberResponseDto;
 import com.example.orderservice.dto.OrdersResponseDto;
 import com.example.orderservice.core.exception.CustomException;
 import com.example.orderservice.repository.OrdersRepository;
@@ -10,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 @RequiredArgsConstructor
@@ -23,17 +26,25 @@ public class OrdersServiceImpl implements OrdersService {
     //private final MemberService memberService;
     //private final ProductRepository productRepository;
 
+    private final MemberServiceClient memberServiceClient;
+
 
     @Override
     public List<OrdersResponseDto> getOrderList(String email){
 
         // TODO: Member API 요청
-//        List<Orders> ordersList = ordersRepository.findByMember_Email(email);
-//
-//        return ordersList.stream()
-//                .map(OrdersResponseDto::new)
-//                .collect(Collectors.toList());
-        return null;
+        MemberResponseDto user = memberServiceClient.getUserByEmail(email);
+
+        List<Orders> ordersList = ordersRepository.findByMemberId(user.getId());
+
+        System.out.println(user);
+        System.out.println(ordersList.stream()
+                .map(OrdersResponseDto::new)
+                .collect(Collectors.toList()));
+
+        return ordersList.stream()
+                .map(OrdersResponseDto::new)
+                .collect(Collectors.toList());
     }
 
     // 주문

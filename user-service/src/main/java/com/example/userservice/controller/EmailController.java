@@ -13,25 +13,25 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/mail")
+@RequestMapping("/api/member")
 public class EmailController {
     private final EmailService emailService;
     private final VerificationCodeStore verificationCodeStore;
 
     // 이메일 전송
-    @PostMapping("/send")
+    @PostMapping("/mailSend")
     public ResponseEntity<?> mailSend(@RequestBody EmailDto emailDto) {
         int num = emailService.sendMail(emailDto);
+        // Todo: 작업완료 후 "이메일이 전송되었습니다" 수정
         return ResponseEntity.ok( ApiUtils.success(num) );
     }
 
     // 이메일 체크
-    @PostMapping("/check")
+    @PostMapping("/mailCheck")
     public ResponseEntity<?> mailCheck(@RequestBody EmailDto emailDto) {
         String email = emailDto.getEmail();
         int certification = emailDto.getCertification();
         emailService.mailCheck(email, certification);
-        System.out.println(verificationCodeStore.getVerificationStatus(email));
         return ResponseEntity.ok( ApiUtils.success("인증되었습니다.") );
     }
 

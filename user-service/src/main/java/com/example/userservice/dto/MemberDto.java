@@ -1,6 +1,7 @@
 package com.example.userservice.dto;
 
 
+import com.example.userservice.entity.Member;
 import com.example.userservice.entity.MemberRole;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Pattern;
@@ -39,5 +40,12 @@ public class MemberDto {
 
     @Builder.Default
     private List<MemberRole> memberRoleList = new ArrayList<>();
+
+    public MemberDto updateDTO(Member member) {
+        return MemberDto.builder()
+                .email(member.getEmail())
+                .username(member.getUsername())
+                .build();
+    }
 
 }

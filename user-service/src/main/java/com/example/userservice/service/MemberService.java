@@ -11,4 +11,6 @@ public interface MemberService {
     Long memberByEmail(String email);
 
     Member getMemberByEmail(String email);
+
+    MemberDto getMemberDetailsByEmail(String username);
 }

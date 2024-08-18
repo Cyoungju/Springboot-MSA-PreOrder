@@ -35,9 +35,3 @@ out/
 
 ### VS Code ###
 .vscode/
-
-### add ###
-application.properties
-application.yml
-mysql_data/
-.env

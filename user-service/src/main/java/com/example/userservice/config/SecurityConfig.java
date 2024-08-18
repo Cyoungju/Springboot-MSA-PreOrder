@@ -19,6 +19,8 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
@@ -32,6 +34,7 @@ public class SecurityConfig {
     private final ObjectMapper objectMapper;
 
     private final RefreshRepository refreshRepository;
+
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception{
@@ -51,7 +54,6 @@ public class SecurityConfig {
         //csrf disable
         http
                 .csrf((auth) -> auth.disable());
-
         //From 로그인 방식 disable
         http
                 .formLogin((auth) -> auth.disable());
@@ -63,7 +65,7 @@ public class SecurityConfig {
         //경로별 인가 작업
         http
                 .authorizeHttpRequests((auth) -> auth
-                        .requestMatchers("/auth/**","/reissue", "/","/mail/**").permitAll()
+                        .requestMatchers("/api/member/**", "/users/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll() // product get 요청만 접근허용
                         .requestMatchers(HttpMethod.GET, "/api/products").permitAll() // product get 요청만 접근허용
                         .requestMatchers("/admin").hasRole("ADMIN")
@@ -71,7 +73,7 @@ public class SecurityConfig {
 
         // 로그인 필터 설정
         LoginFilter loginFilter = new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil, objectMapper, refreshRepository);
-        loginFilter.setFilterProcessesUrl("/auth/login"); // 로그인 경로 설정
+        loginFilter.setFilterProcessesUrl("/api/member/login"); // 로그인 경로 설정
 
         // 로그아웃 필터설정
         CustomLogoutFilter customLogoutFilter = new CustomLogoutFilter(jwtUtil,refreshRepository);
@@ -94,4 +96,5 @@ public class SecurityConfig {
 
         return http.build();
     }
+
 }

@@ -9,9 +9,9 @@ import lombok.*;
 @Getter
 @Entity
 @Builder
-@ToString(exclude = {"orders","product"})
+@ToString(exclude = {"orders"})
 @Table(name="orderItem", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"orders_id", "product_id"})})
+        @UniqueConstraint(columnNames = {"orders_id"})})
 public class OrdersItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
