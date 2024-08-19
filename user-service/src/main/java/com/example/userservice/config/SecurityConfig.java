@@ -65,7 +65,7 @@ public class SecurityConfig {
         //경로별 인가 작업
         http
                 .authorizeHttpRequests((auth) -> auth
-                        .requestMatchers("/api/member/**", "/users/**").permitAll()
+                        .requestMatchers("/api/member/login","/api/member/sign-up", "/users/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll() // product get 요청만 접근허용
                         .requestMatchers(HttpMethod.GET, "/api/products").permitAll() // product get 요청만 접근허용
                         .requestMatchers("/admin").hasRole("ADMIN")
@@ -79,8 +79,8 @@ public class SecurityConfig {
         CustomLogoutFilter customLogoutFilter = new CustomLogoutFilter(jwtUtil,refreshRepository);
 
 
-        http
-                .addFilterBefore(new JwtFilter(jwtUtil), LoginFilter.class);
+//        http
+//                .addFilterBefore(new JwtFilter(jwtUtil), LoginFilter.class);
 
         http
                 .addFilterAt(loginFilter, UsernamePasswordAuthenticationFilter.class);

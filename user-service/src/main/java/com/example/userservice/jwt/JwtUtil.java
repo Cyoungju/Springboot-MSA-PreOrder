@@ -1,7 +1,9 @@
 package com.example.userservice.jwt;
 
+import com.example.userservice.entity.Member;
 import io.jsonwebtoken.Jwts;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -38,7 +40,8 @@ public class JwtUtil {
     }
 
     // 토큰생성
-    public String createJwt(String category,String username, String role, Long expiredMs) {
+    public String createJwt(String category, String username, String role, Long expiredMs) {
+        System.out.println(secretKey);
         return Jwts.builder()
                 .claim("category", category) // AccessToken 인지 RefreshToken 인지 작성
                 .claim("username", username)
