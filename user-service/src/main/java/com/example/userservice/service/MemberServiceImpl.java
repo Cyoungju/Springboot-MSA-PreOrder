@@ -3,6 +3,7 @@ package com.example.userservice.service;
 import com.example.userservice.core.exception.CustomException;
 import com.example.userservice.core.utils.EncryptionUtil;
 import com.example.userservice.dto.MemberDto;
+import com.example.userservice.dto.MemberResponseDto;
 import com.example.userservice.entity.Member;
 import com.example.userservice.dto.VerificationCodeStore;
 import com.example.userservice.entity.MemberRole;
@@ -44,7 +45,7 @@ public class MemberServiceImpl implements MemberService{
         // throw new CustomException("이메일 인증 해주세요!");
         // 통과 된다면 회원가입 진행
         // 이메일 인증 확인 - 아닐경우 에러 메시지
-        //verificationCodeStore.getVerificationStatus(originalEmail); // 인증 상태를 확인
+        verificationCodeStore.getVerificationStatus(originalEmail); // 인증 상태를 확인
 
         // ==============================================
 
@@ -65,7 +66,7 @@ public class MemberServiceImpl implements MemberService{
 
         memberRepository.save(member);
         // 인증 번호 삭제
-        //verificationCodeStore.removeCode(originalEmail);
+        verificationCodeStore.removeCode(originalEmail);
 
     }
 
@@ -88,5 +89,12 @@ public class MemberServiceImpl implements MemberService{
         Member member = memberRepository.findByEmail(username);
         MemberDto memberDto = new MemberDto();
         return memberDto.updateDTO(member);
+    }
+
+    @Override
+    public MemberResponseDto getUserByEmail(String email) {
+        // 이메일을 통해 회원을 조회하고, MemberResponseDto로 변환하여 반환
+        Member member = memberRepository.findByEmail(email);
+        return new MemberResponseDto(member.getId(), member.getEmail(), member.getUsername());
     }
 }

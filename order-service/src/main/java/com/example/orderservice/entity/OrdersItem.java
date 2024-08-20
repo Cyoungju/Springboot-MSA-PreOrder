@@ -11,11 +11,14 @@ import lombok.*;
 @Builder
 @ToString(exclude = {"orders"})
 @Table(name="orderItem", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"orders_id"})})
+        @UniqueConstraint(columnNames = {"productId", "orders_id"})
+})
 public class OrdersItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    private Long productId;
 
     private String productName;
 
@@ -27,12 +30,4 @@ public class OrdersItem {
     @JoinColumn(name = "orders_id")
     private Orders orders;
 
-    // TODO: Product API 요청
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "product_id")
-//    private Product product;
-
-//    public void reQuantity() {
-//        product.increaseStock(count);
-//    }
 }

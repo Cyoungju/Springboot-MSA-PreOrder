@@ -1,9 +1,14 @@
 package com.example.orderservice.service;
 
 import com.example.orderservice.client.MemberServiceClient;
+import com.example.orderservice.client.ProductServiceClient;
+import com.example.orderservice.core.utils.EncryptionUtil;
 import com.example.orderservice.dto.MemberResponseDto;
 import com.example.orderservice.dto.OrdersResponseDto;
 import com.example.orderservice.core.exception.CustomException;
+import com.example.orderservice.dto.ProductResponseDto;
+import com.example.orderservice.entity.OrdersItem;
+import com.example.orderservice.entity.WishListItem;
 import com.example.orderservice.repository.OrdersRepository;
 import com.example.orderservice.entity.Orders;
 import com.example.orderservice.entity.OrdersStatus;
@@ -11,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,36 +27,35 @@ import java.util.stream.Collectors;
 public class OrdersServiceImpl implements OrdersService {
 
     private final OrdersRepository ordersRepository;
+    
     private final WishListService wishListService;
-    // TODO: Member, Product API 요청
-    //private final MemberService memberService;
-    //private final ProductRepository productRepository;
 
     private final MemberServiceClient memberServiceClient;
 
+    private final ProductServiceClient productServiceClient;
 
     @Override
     public List<OrdersResponseDto> getOrderList(String email){
 
-        // TODO: Member API 요청
         MemberResponseDto user = memberServiceClient.getUserByEmail(email);
 
-        List<Orders> ordersList = ordersRepository.findByMemberId(user.getId());
+        if (user == null) {
+            throw new CustomException("사용자를 찾을 수 없습니다.");
+        }
 
-        System.out.println(user);
-        System.out.println(ordersList.stream()
-                .map(OrdersResponseDto::new)
-                .collect(Collectors.toList()));
+        // 조회한 회원 ID를 사용하여 주문 목록 조회
+        List<Orders> ordersList = ordersRepository.findByMemberId(user.getId());
 
         return ordersList.stream()
                 .map(OrdersResponseDto::new)
                 .collect(Collectors.toList());
+
     }
 
     // 주문
     @Override
     public List<OrdersResponseDto> addOrders(String email){
-        /*
+
         // wishList 조회
         Long wishListId = wishListService.findByMemberEmail(email).getId();
         List<WishListItem> wishListItems = wishListService.findAllWishListItem(wishListId);
@@ -60,54 +65,60 @@ public class OrdersServiceImpl implements OrdersService {
             throw new CustomException("장바구니가 비어있습니다.");
         }
 
-        Member member = memberService.getMemberByEmail(email);
+        MemberResponseDto user = memberServiceClient.getUserByEmail(email); 
 
         // 주문생성
         // Order객체생성 - builder로
         Orders orders = Orders.builder()
                 .orderStatus(OrdersStatus.ACCEPTED) // 초기 ACCEPTED
-                .member(member)
+                .memberId(user.getId())
                 .build();
 
         // orderItem 에저장
         // wishList객체를 기반으로 item 생성
         List<OrdersItem> ordersItems = new ArrayList<>();
 
-        for (WishListItem wishListItem : wishListItems) {
-            Product product = wishListItem.getProduct();
+        // 총 가격 계산
+        Long totalPrice = 0L;
 
+        for (WishListItem wishListItem : wishListItems) {
+            // ProductService에서 제품 정보 조회
+            ProductResponseDto product = productServiceClient.getProduct(wishListItem.getProductId());
+
+            // 재고 확인
+            if (product.getProductStock() < wishListItem.getCount()) {
+                throw new CustomException("상품 재고가 부족합니다: " + product.getProductName());
+            }
+            // OrdersItem 생성
             OrdersItem ordersItem = OrdersItem.builder()
-                    .product(product)
+                    .productId(product.getProductId())
                     .orders(orders)
                     .count(wishListItem.getCount())
-                    .productPrice(product.getPrice() * wishListItem.getCount())
-                    .productName(product.getName())
+                    .productPrice(product.getProductPrice() * wishListItem.getCount())
+                    .productName(product.getProductName())
                     .build();
 
             ordersItems.add(ordersItem);
 
-            //재고 감소
-            product.decreaseStock(wishListItem.getCount());
-            productRepository.save(product);
+            // 재고 감소 요청
+            productServiceClient.decreaseStock(product.getProductId(), wishListItem.getCount());
+
+            // 총 가격 누적
+            totalPrice += ordersItem.getProductPrice();
         }
 
+        // 주문에 아이템 추가 및 총 가격 설정
         orders.changeOrderItem(ordersItems);
-
-        // TotalPrice
-        Long totalPrice = ordersItems.stream().mapToLong(
-                ordersItem -> ordersItem.getProduct().getPrice() * ordersItem.getCount()
-        ).sum();
         orders.changeTotalPrice(totalPrice);
 
+        // 주문 저장
         ordersRepository.save(orders);
 
-        // 카트의 상품 전부 삭제
+        // WishList 비우기
         wishListService.deleteId(wishListId);
 
+        // 업데이트된 주문 목록 반환
         return getOrderList(email);
-        */
-        // TODO: null 수정
-        return null;
     }
 
 
@@ -120,16 +131,12 @@ public class OrdersServiceImpl implements OrdersService {
             orders.changeOrderStatus(OrdersStatus.CANCELED);
 
             // 상품의 수량을 복구
-            // TODO: 수량복구 로직 수정
-            /*
             for (OrdersItem item : orders.getOrdersItems()) {
-                Product product = item.getProduct();
-                product.increaseStock(item.getCount()); // 상품의 수량 복구
-                productRepository.save(product); // 변경된 상품을 저장
+                ProductResponseDto product = productServiceClient.getProduct(item.getProductId());
+
+                // 수량 증가 - 저장 까지
+                productServiceClient.increaseStock(product.getProductId(), item.getCount());
             }
-            */
-
-
             ordersRepository.save(orders);
             return getOrderList(email);
         }else if(orders.getOrderStatus() == OrdersStatus.CANCELED) {

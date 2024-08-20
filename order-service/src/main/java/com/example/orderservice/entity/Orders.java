@@ -27,10 +27,8 @@ public class Orders extends BaseTimeEntity {
     @Column(nullable = false)
     private OrdersStatus orderStatus; // 기본값
 
-    // TODO: Member API 요청
+
     private Long memberId;
-    //@ManyToOne(fetch = FetchType.LAZY)
-    //private Member member;
 
     @OneToMany(mappedBy = "orders", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

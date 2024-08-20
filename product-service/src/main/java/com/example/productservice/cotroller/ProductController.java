@@ -2,6 +2,7 @@ package com.example.productservice.cotroller;
 
 import com.example.productservice.core.utils.ApiUtils;
 import com.example.productservice.dto.ProductDto;
+import com.example.productservice.dto.ProductResponseDto;
 import com.example.productservice.entity.ProductStatus;
 import com.example.productservice.service.ProductService;
 import lombok.RequiredArgsConstructor;
@@ -42,4 +43,5 @@ public class ProductController {
         ApiUtils.ApiResult<?> apiResult = ApiUtils.success(productDto);
         return ResponseEntity.ok(apiResult);
     }
+
 }

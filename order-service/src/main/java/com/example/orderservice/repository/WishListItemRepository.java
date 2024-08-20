@@ -8,13 +8,13 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface WishListItemRepository extends JpaRepository<WishListItem, Long> {
     // 특정한 사용자의 모든 장바구니 아이템을 가져올 경우
-    // TODO: Member, Product API 요청
-    //List<WishListItem> findByWishListMemberId(Long memberId);
+    List<WishListItem> findByWishListMemberId(Long memberId);
 
-    //Optional<WishListItem> findByWishListAndProductId(WishList wishList, Long productID);
+    Optional<WishListItem> findByWishListAndProductId(WishList wishList, Long productID);
 
     List<WishListItem> findByWishList(WishList wishList);
 

@@ -9,16 +9,18 @@ import lombok.*;
 @Entity
 @Builder
 @Table(name="wishListItem")
-@ToString(exclude = {"wishList","product"})
+@ToString(exclude = {"wishList"})
 public class WishListItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // TODO: Product API 요청
-    // @ManyToOne(fetch = FetchType.LAZY)
-    // @JoinColumn(name = "product_id")
-    // private Product product;
+    private String productName;
+
+    private Long productPrice;
+
+    private Long productId;
+
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "wishList_id")

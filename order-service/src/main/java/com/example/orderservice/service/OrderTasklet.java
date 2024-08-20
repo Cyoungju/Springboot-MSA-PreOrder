@@ -1,5 +1,8 @@
 package com.example.orderservice.service;
 
+import com.example.orderservice.client.ProductServiceClient;
+import com.example.orderservice.dto.ProductResponseDto;
+import com.example.orderservice.entity.OrdersItem;
 import com.example.orderservice.repository.OrdersRepository;
 import com.example.orderservice.entity.Orders;
 import com.example.orderservice.entity.OrdersStatus;
@@ -13,14 +16,15 @@ import org.springframework.batch.repeat.RepeatStatus;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
 public class OrderTasklet implements Tasklet {
 
     private final OrdersRepository ordersRepository;
-    // TODO: Product API 요청
-    //private final ProductRepository productRepository;
+
+    private final ProductServiceClient productServiceClient;
 
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
@@ -63,18 +67,13 @@ public class OrderTasklet implements Tasklet {
                     log.info("수정한 날로 1일경과 && RETURN_REQUESTED(반품진행중) -> RETURNED(반품 완료)");
 
                     // 상품 수량 복구
-                    // TODO: 수량 복구 로직 수정
-                    /*
-                    List<OrdersItem> orderItems = order.getOrdersItems();
-                    for(OrdersItem item : orderItems){
-                        item.reQuantity();
+                    for (OrdersItem item : order.getOrdersItems()) {
+                        ProductResponseDto product = productServiceClient.getProduct(item.getProductId());
+
+                        // 수량 증가 - 저장 까지
+                        productServiceClient.increaseStock(product.getProductId(), item.getCount());
                     }
 
-                    productRepository.saveAll(orderItems.stream()
-                            .map(OrdersItem::getProduct)
-                            .collect(Collectors.toSet()));
-
-                     */
                 }
 
                 // 상태 변경된 주문 저장

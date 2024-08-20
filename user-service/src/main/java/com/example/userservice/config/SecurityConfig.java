@@ -65,9 +65,7 @@ public class SecurityConfig {
         //경로별 인가 작업
         http
                 .authorizeHttpRequests((auth) -> auth
-                        .requestMatchers("/api/member/login","/api/member/sign-up", "/users/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll() // product get 요청만 접근허용
-                        .requestMatchers(HttpMethod.GET, "/api/products").permitAll() // product get 요청만 접근허용
+                        .requestMatchers("/api/client/**", "/api/member/sign-up","/api/member/login", "/api/member/mailSend", "/api/member/mailCheck").permitAll()
                         .requestMatchers("/admin").hasRole("ADMIN")
                         .anyRequest().authenticated());
 

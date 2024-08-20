@@ -1,5 +1,6 @@
 package com.example.productservice.service;
 
+import com.example.productservice.dto.ProductResponseDto;
 import com.example.productservice.entity.Product;
 import com.example.productservice.dto.ProductDto;
 import com.example.productservice.entity.ProductStatus;
@@ -13,5 +14,12 @@ public interface ProductService {
 
     ProductDto findById(Long id);
 
-    Product findByIdProduct(Long id);
+    ProductResponseDto findByIdStatusProduct(Long id);
+
+    ProductResponseDto getProductId(Long id);
+
+    // 재고 감소
+    void decreaseStock(Long productId, int count);
+
+    void increaseStock(Long productId, int count);
 }
