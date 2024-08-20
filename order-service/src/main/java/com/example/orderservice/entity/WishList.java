@@ -19,9 +19,7 @@ public class WishList {
 
     private Long totalPrice;
 
-    // TODO: Member API 요청
-    // @OneToOne
-    // private Member member;
+    private Long memberId;
 
     public void changeTotalPrice(Long totalPrice){
         this.totalPrice = totalPrice;
@@ -29,18 +27,9 @@ public class WishList {
 
 
     @Builder
-    public WishList(Long id, Long totalPrice) {
+    public WishList(Long id, Long totalPrice, Long memberId) {
         this.id = id;
         this.totalPrice = totalPrice;
+        this.memberId = memberId;
     }
-
-    // TODO: Member API 요청
-    /*
-    @Builder
-    public WishList(Long id, Long totalPrice, Member member) {
-        this.id = id;
-        this.totalPrice = totalPrice;
-        this.member = member;
-    }
-    */
 }

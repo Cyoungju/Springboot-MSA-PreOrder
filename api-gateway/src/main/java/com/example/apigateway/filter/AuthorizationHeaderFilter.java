@@ -18,7 +18,6 @@ import reactor.core.publisher.Mono;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
-import java.util.Date;
 
 @Component
 @Slf4j
@@ -43,7 +42,6 @@ public class AuthorizationHeaderFilter extends AbstractGatewayFilterFactory<Auth
             // Authorization 헤더에서 JWT를 추출
             String authorizationHeader = request.getHeaders().get(HttpHeaders.AUTHORIZATION).get(0);
             String jwt = authorizationHeader.replace("Bearer", "").trim();
-            log.info(jwt);
 
 
             // JWT를 검증하고 클레임을 추출

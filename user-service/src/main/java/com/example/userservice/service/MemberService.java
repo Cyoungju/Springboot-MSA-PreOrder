@@ -1,6 +1,7 @@
 package com.example.userservice.service;
 
 import com.example.userservice.dto.MemberDto;
+import com.example.userservice.dto.MemberResponseDto;
 import com.example.userservice.entity.Member;
 import org.springframework.stereotype.Service;
 
@@ -13,4 +14,6 @@ public interface MemberService {
     Member getMemberByEmail(String email);
 
     MemberDto getMemberDetailsByEmail(String username);
+
+    MemberResponseDto getUserByEmail(String email);
 }

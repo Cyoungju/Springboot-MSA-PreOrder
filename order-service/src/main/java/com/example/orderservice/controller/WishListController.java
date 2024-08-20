@@ -13,35 +13,30 @@ import java.security.Principal;
 
 
 @RequiredArgsConstructor
-@RequestMapping("/api/orders/wishList")
+@RequestMapping("/api/wishList")
 @RestController
 public class WishListController {
 
     private final WishListService wishListService;
 
     @GetMapping
-    public ResponseEntity<?> getWishList(Principal principal){
-        String username = principal.getName();
-        WishListResponseDto wishList = wishListService.wishList(username);
+    public ResponseEntity<?> getWishList(@RequestHeader("X-Authenticated-User") String email){
+        WishListResponseDto wishList = wishListService.wishList(email);
 
         ApiUtils.ApiResult<?> apiResult = ApiUtils.success(wishList);
         return ResponseEntity.ok(apiResult);
     }
 
     @PostMapping
-    public ResponseEntity<?> addWish(@RequestBody WishListItemDto wishListItemListDto, Principal principal){
-        String username = principal.getName();
-
-        WishListResponseDto wishList = wishListService.addWishList(wishListItemListDto, username);
+    public ResponseEntity<?> addWish(@RequestBody WishListItemDto wishListItemListDto, @RequestHeader("X-Authenticated-User") String email){
+        WishListResponseDto wishList = wishListService.addWishList(wishListItemListDto, email);
         ApiUtils.ApiResult<?> apiResult = ApiUtils.success(wishList);
         return ResponseEntity.ok(apiResult);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteWish(@PathVariable Long id, Principal principal){
-        String username = principal.getName();
-
-        WishListResponseDto wishList = wishListService.deleteWishListItem(id, username);
+    public ResponseEntity<?> deleteWish(@PathVariable Long id, @RequestHeader("X-Authenticated-User") String email){
+        WishListResponseDto wishList = wishListService.deleteWishListItem(id, email);
         ApiUtils.ApiResult<?> apiResult = ApiUtils.success(wishList);
         return ResponseEntity.ok(apiResult);
     }

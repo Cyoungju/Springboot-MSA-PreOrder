@@ -9,5 +9,4 @@ public class MemberResponseDto {
     private Long id;
     private String email;
     private String username;
-    private String role;
 }

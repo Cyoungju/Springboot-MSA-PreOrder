@@ -1,5 +1,6 @@
 package com.example.orderservice.config;
 
+import com.example.orderservice.client.ProductServiceClient;
 import com.example.orderservice.repository.OrdersRepository;
 import com.example.orderservice.service.OrderTasklet;
 import lombok.RequiredArgsConstructor;
@@ -23,8 +24,7 @@ public class BatchConfig {
 
     private final OrdersRepository ordersRepository;
 
-    // TODO: Product API 요청
-    //private final ProductRepository productRepository;
+    private final ProductServiceClient productServiceClient;
 
     private final JobRepository jobRepository;
 
@@ -48,9 +48,7 @@ public class BatchConfig {
     public Step changeOrderStatus() {
         StepBuilder stepBuilder = new StepBuilder("changeOrderStatus", jobRepository); // 메소드 이름과 동일학세
 
-        // TODO: Product 주입 수정
-        //Tasklet tasklet = new OrderTasklet(ordersRepository, productRepository);
-        Tasklet tasklet = new OrderTasklet(ordersRepository);
+        Tasklet tasklet = new OrderTasklet(ordersRepository, productServiceClient);
 
         return stepBuilder.tasklet(tasklet, transactionManager).build();// 처리할 Tasklet을 생성
 

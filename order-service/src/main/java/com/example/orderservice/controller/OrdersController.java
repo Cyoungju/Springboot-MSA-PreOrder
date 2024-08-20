@@ -1,5 +1,6 @@
 package com.example.orderservice.controller;
 
+import com.example.orderservice.core.utils.EncryptionUtil;
 import com.example.orderservice.dto.OrdersResponseDto;
 import com.example.orderservice.service.OrdersService;
 import com.example.orderservice.core.utils.ApiUtils;
@@ -18,42 +19,36 @@ public class OrdersController {
 
     private final OrdersService ordersService;
 
+
     @GetMapping
     public ResponseEntity<?> getList(@RequestHeader("X-Authenticated-User") String email){
-
-        //String username = principal.getName();
-
         List<OrdersResponseDto> ordersResponseDto = ordersService.getOrderList(email);
-
         ApiUtils.ApiResult<?> apiResult = ApiUtils.success(ordersResponseDto);
         return ResponseEntity.ok(apiResult);
     }
 
     @PostMapping
-    public ResponseEntity<?> addOrder(Principal principal){
-        String username = principal.getName();
+    public ResponseEntity<?> addOrder(@RequestHeader("X-Authenticated-User") String email){
 
-        List<OrdersResponseDto> ordersResponseDto = ordersService.addOrders(username);
+        List<OrdersResponseDto> ordersResponseDto = ordersService.addOrders(email);
 
         ApiUtils.ApiResult<?> apiResult = ApiUtils.success(ordersResponseDto);
         return ResponseEntity.ok(apiResult);
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<?> cancelOrder(@PathVariable Long id, Principal principal){
-        String username = principal.getName();
+    public ResponseEntity<?> cancelOrder(@PathVariable Long id, @RequestHeader("X-Authenticated-User") String email){
 
-        List<OrdersResponseDto> ordersResponseDto = ordersService.canceled(id, username);
+        List<OrdersResponseDto> ordersResponseDto = ordersService.canceled(id, email);
 
         ApiUtils.ApiResult<?> apiResult = ApiUtils.success(ordersResponseDto);
         return ResponseEntity.ok(apiResult);
     }
 
     @PatchMapping("/return/{id}")
-    public ResponseEntity<?> returnOrder(@PathVariable Long id, Principal principal){
-        String username = principal.getName();
+    public ResponseEntity<?> returnOrder(@PathVariable Long id, @RequestHeader("X-Authenticated-User") String email){
 
-        List<OrdersResponseDto> ordersResponseDto = ordersService.returned(id, username);
+        List<OrdersResponseDto> ordersResponseDto = ordersService.returned(id, email);
 
         ApiUtils.ApiResult<?> apiResult = ApiUtils.success(ordersResponseDto);
         return ResponseEntity.ok(apiResult);

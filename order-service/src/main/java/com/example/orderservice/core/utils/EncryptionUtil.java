@@ -1,4 +1,4 @@
-package com.example.userservice.core.utils;
+package com.example.orderservice.core.utils;
 
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
@@ -61,7 +61,7 @@ public class EncryptionUtil {
         } catch (Exception e) {
             throw new RuntimeException("Encryption failed", e);
         }
-        return Base64.getUrlEncoder().encodeToString(encryptedBytes);
+        return Base64.getEncoder().encodeToString(encryptedBytes);
     }
 
     // 암호화된 데이터를 AES 알고리즘을 사용하여 복호화하는 메서드
@@ -70,7 +70,7 @@ public class EncryptionUtil {
         try {
             Cipher cipher = Cipher.getInstance(ALGORITHM);
             cipher.init(Cipher.DECRYPT_MODE, secretKey, iv);
-            byte[] decodedBytes = Base64.getUrlDecoder().decode(encryptedData);
+            byte[] decodedBytes = Base64.getDecoder().decode(encryptedData);
             originalBytes = cipher.doFinal(decodedBytes);
         } catch (Exception e) {
             throw new RuntimeException("Decryption failed", e);

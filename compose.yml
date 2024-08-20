@@ -1,24 +1,50 @@
 services:
-  my-spring-server:
-    build:
-      context : .
-      dockerfile: Dockerfile
-    ports:
-      - 8080:8080
-    depends_on:
-      my-ecommercedb:
-        condition: service_healthy
+#  my-spring-server:
+#    build:
+#      context : .
+#      dockerfile: Dockerfile
+#    ports:
+#      - 8080:8080
+#    depends_on:
+#      my-ecommercedb:
+#        condition: service_healthy
 
-  my-ecommercedb:
+  ecommercedb-user:
     image: mysql
     environment:
-      MYSQL_ROOT_PASSWORD : pwd1234
-      MYSQL_DATABASE: ecommercedb
+      MYSQL_ROOT_PASSWORD : ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
     volumes:
-      - ./mysql_data:/var/lib/mysql
-#    ports:
-#      - 3306:3306
+      - ./mysql_data_user:/var/lib/mysql
+    ports:
+      - 3306:3306
     healthcheck:
       test: ["CMD","mysqladmin","ping"]
+      interval: 5s
+      retries: 10
+  ecommercedb-product:
+    image: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD : ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    volumes:
+      - ./mysql_data_product:/var/lib/mysql
+    ports:
+      - 3307:3306
+    healthcheck:
+      test: ["CMD","mysqladmin","ping"]
+      interval: 5s
+      retries: 10
+  ecommercedb-order:
+    image: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    volumes:
+      - ./mysql_data_order:/var/lib/mysql
+    ports:
+      - 3308:3306
+    healthcheck:
+      test: [ "CMD","mysqladmin","ping" ]
       interval: 5s
       retries: 10
