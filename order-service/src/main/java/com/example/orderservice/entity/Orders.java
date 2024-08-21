@@ -13,7 +13,7 @@ import java.util.List;
 @Getter
 @Entity
 @Builder
-@ToString()
+@ToString(exclude = "ordersItems")
 @Table(name="orders")
 public class Orders extends BaseTimeEntity {
 
@@ -27,8 +27,14 @@ public class Orders extends BaseTimeEntity {
     @Column(nullable = false)
     private OrdersStatus orderStatus; // 기본값
 
-
     private Long memberId;
+
+    // 배송지
+    private String address;
+
+    private String detailAdr;
+
+    private String phone;
 
     @OneToMany(mappedBy = "orders", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

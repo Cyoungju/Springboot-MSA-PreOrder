@@ -2,7 +2,7 @@ package com.example.orderservice.service;
 
 import com.example.orderservice.client.MemberServiceClient;
 import com.example.orderservice.client.ProductServiceClient;
-import com.example.orderservice.core.utils.EncryptionUtil;
+import com.example.orderservice.dto.AddressResponseDto;
 import com.example.orderservice.dto.MemberResponseDto;
 import com.example.orderservice.dto.OrdersResponseDto;
 import com.example.orderservice.core.exception.CustomException;
@@ -34,6 +34,7 @@ public class OrdersServiceImpl implements OrdersService {
 
     private final ProductServiceClient productServiceClient;
 
+
     @Override
     public List<OrdersResponseDto> getOrderList(String email){
 
@@ -54,7 +55,7 @@ public class OrdersServiceImpl implements OrdersService {
 
     // 주문
     @Override
-    public List<OrdersResponseDto> addOrders(String email){
+    public List<OrdersResponseDto> addOrders(String email,Long addressId){
 
         // wishList 조회
         Long wishListId = wishListService.findByMemberEmail(email).getId();
@@ -65,13 +66,24 @@ public class OrdersServiceImpl implements OrdersService {
             throw new CustomException("장바구니가 비어있습니다.");
         }
 
-        MemberResponseDto user = memberServiceClient.getUserByEmail(email); 
+        MemberResponseDto user = memberServiceClient.getUserByEmail(email);
+
+        // 배송지 정보 가지고 오기
+        AddressResponseDto address;
+        if(addressId != null){
+            address = memberServiceClient.getAddressById(addressId).orElseThrow(() -> new CustomException("선택한 배송지를 찾을 수 없습니다."));;
+        }else{
+            address = memberServiceClient.getDefaultAddress(user.getId()) .orElseThrow(() -> new CustomException("기본 배송지가 설정되어 있지 않습니다."));
+        }
 
         // 주문생성
         // Order객체생성 - builder로
         Orders orders = Orders.builder()
                 .orderStatus(OrdersStatus.ACCEPTED) // 초기 ACCEPTED
                 .memberId(user.getId())
+                .address(address.getAddress())
+                .detailAdr(address.getDetailAdr())
+                .phone(address.getPhone())
                 .build();
 
         // orderItem 에저장

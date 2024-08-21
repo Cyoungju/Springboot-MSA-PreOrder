@@ -19,9 +19,19 @@ public class OrdersResponseDto {
 
     private String ordersStatus;
 
+    // 배송지
+    private String address;
+
+    private String detailAdr;
+
+    private String phone;
+
     public OrdersResponseDto(Orders orders) {
         this.id = orders.getId();
         this.totalPrice = orders.getTotalPrice();
         this.ordersStatus = orders.getOrderStatus().getDesc();
+        this.address = orders.getAddress();
+        this.detailAdr = orders.getDetailAdr();
+        this.phone = orders.getPhone();
     }
 }

@@ -1,6 +1,8 @@
 package com.example.userservice.client;
 
+import com.example.userservice.dto.AddressResponseDto;
 import com.example.userservice.dto.MemberResponseDto;
+import com.example.userservice.service.AddressService;
 import com.example.userservice.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,9 +17,21 @@ public class MemberControllerClient {
 
     private final MemberService memberService;
 
+    private final AddressService addressService;
+
     // 이메일로 회원 정보 조회
     @GetMapping("/{email}")
     public MemberResponseDto getUserByEmail(@PathVariable("email") String email) {
         return memberService.getUserByEmail(email);
+    }
+
+    @GetMapping("/defaultAddress/{memberId}")
+    public AddressResponseDto getDefaultAddress(@PathVariable Long memberId) {
+        return addressService.getDefaultAddress(memberId);
+    }
+
+    @GetMapping("/address/{addressId}")
+    public AddressResponseDto getAddressById(@PathVariable Long addressId) {
+        return addressService.getAddressById(addressId);
     }
 }
