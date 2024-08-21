@@ -28,9 +28,9 @@ public class OrdersController {
     }
 
     @PostMapping
-    public ResponseEntity<?> addOrder(@RequestHeader("X-Authenticated-User") String email){
+    public ResponseEntity<?> addOrder(@RequestHeader("X-Authenticated-User") String email, Long addressId){
 
-        List<OrdersResponseDto> ordersResponseDto = ordersService.addOrders(email);
+        List<OrdersResponseDto> ordersResponseDto = ordersService.addOrders(email, addressId);
 
         ApiUtils.ApiResult<?> apiResult = ApiUtils.success(ordersResponseDto);
         return ResponseEntity.ok(apiResult);

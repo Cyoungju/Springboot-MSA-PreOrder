@@ -3,6 +3,7 @@ package com.example.userservice.entity;
 import com.example.userservice.core.utils.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -10,6 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Getter
 @Entity
+@Builder
 @Table(name = "address")
 public class Address extends BaseTimeEntity {
 
