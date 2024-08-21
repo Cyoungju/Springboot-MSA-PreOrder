@@ -1,17 +1,15 @@
 package com.example.userservice.jwt;
 
 import com.example.userservice.core.exception.CustomException;
-import com.example.userservice.dto.MemberDto;
-import com.example.userservice.entity.Refresh;
+import com.example.userservice.entity.RefreshToken;
 import com.example.userservice.repository.RefreshRepository;
-import com.example.userservice.service.MemberService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -23,9 +21,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collection;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.UUID;
 
 // formLogin disable 했기 때문에 UsernamePasswordAuthenticationFilter가 작동 하지 않음 -> 커스텀 필터 작성
 @RequiredArgsConstructor
@@ -37,8 +35,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter  {
 
     private final ObjectMapper objectMapper;
 
-    private final RefreshRepository refreshRepository;
-
+    private final RefreshRepository refreshRepository; // RefreshService 주입
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
@@ -77,13 +74,14 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter  {
 
         //토큰 생성
         String access = jwtUtil.createJwt("access", username, role, 600000L);
-        String refresh = jwtUtil.createJwt("refresh", username, role, 86400000L);
+        String refreshToken = UUID.randomUUID().toString();
+        RefreshToken redis = new RefreshToken(refreshToken, username, role);
 
-        addRefreshEntity(username,refresh,86400000L);
+        refreshRepository.save(redis);
 
         //응답 설정
         response.setHeader("access", access);
-        response.addCookie(createCookie("refresh", refresh));
+        response.addCookie(jwtUtil.createCookie("refresh", refreshToken));
         response.setStatus(HttpStatus.OK.value());
 
 
@@ -92,20 +90,8 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter  {
         response.setStatus(HttpServletResponse.SC_OK);
 
         PrintWriter writer = response.getWriter();
-        writer.write("{\"message\":\"로그인 성공!\", \"AccessToken\":\"" + access + "\", \"RefreshToken\" : \"" + refresh+ "\"}");
+        writer.write("{\"message\":\"로그인 성공!\", \"AccessToken\":\"" + access + "\", \"RefreshToken\" : \"" + refreshToken+ "\"}");
         writer.flush();
-    }
-
-    private void addRefreshEntity(String username, String refresh, Long expiredMs) {
-
-        Date date = new Date(System.currentTimeMillis() + expiredMs);
-
-        Refresh refreshEntity = new Refresh();
-        refreshEntity.setUsername(username);
-        refreshEntity.setRefresh(refresh);
-        refreshEntity.setExpiration(date.toString());
-
-        refreshRepository.save(refreshEntity);
     }
 
     //로그인 실패시 실행하는 메소드
@@ -120,14 +106,4 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter  {
         writer.flush();
     }
 
-    private Cookie createCookie(String key, String value) {
-
-        Cookie cookie = new Cookie(key, value);
-        cookie.setMaxAge(24*60*60); //생명주기
-        //cookie.setSecure(true);
-        //cookie.setPath("/");
-        cookie.setHttpOnly(true); //XSS 공격방어
-
-        return cookie;
-    }
 }
