@@ -1,5 +1,6 @@
 package com.example.apigateway.filter;
 
+import com.example.apigateway.redis.RedisBlacklistService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -22,11 +23,14 @@ import java.nio.charset.StandardCharsets;
 @Component
 @Slf4j
 public class AuthorizationHeaderFilter extends AbstractGatewayFilterFactory<AuthorizationHeaderFilter.Config> {
-    private SecretKey secretKey;
+    private final SecretKey secretKey;
+    
+    private final RedisBlacklistService blacklistService;
 
-    public AuthorizationHeaderFilter(@Value("${jwt.secret.key}") String secret) {
+    public AuthorizationHeaderFilter(@Value("${jwt.secret.key}") String secret, RedisBlacklistService blacklistService) {
         super(Config.class);
         secretKey = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), Jwts.SIG.HS256.key().build().getAlgorithm());
+        this.blacklistService = blacklistService;
     }
 
     @Override
@@ -55,6 +59,11 @@ public class AuthorizationHeaderFilter extends AbstractGatewayFilterFactory<Auth
                 // JWT 검증 중 오류가 발생한 경우 처리합니다.
                 log.error("JWT 토큰 검증 오류", e);
                 return onError(exchange, "JWT 토큰이 유효하지 않습니다.", HttpStatus.UNAUTHORIZED);
+            }
+
+            // 블랙리스트 확인
+            if (blacklistService.isTokenBlacklisted(jwt)) {
+                return onError(exchange, "The token is blacklisted", HttpStatus.UNAUTHORIZED);
             }
 
             // 토큰이 access인지 확인 (발급시 페이로드에 명시)

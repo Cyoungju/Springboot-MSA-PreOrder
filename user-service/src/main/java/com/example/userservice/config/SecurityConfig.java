@@ -1,16 +1,15 @@
 package com.example.userservice.config;
 
 
-import com.example.userservice.jwt.JwtFilter;
 import com.example.userservice.jwt.JwtUtil;
 import com.example.userservice.jwt.LoginFilter;
-import com.example.userservice.repository.RefreshRepository;
 import com.example.userservice.jwt.CustomLogoutFilter;
+import com.example.userservice.repository.RefreshRepository;
+import com.example.userservice.service.RedisBlacklistService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -19,8 +18,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
 
 @Configuration
 @EnableWebSecurity
@@ -34,6 +32,9 @@ public class SecurityConfig {
     private final ObjectMapper objectMapper;
 
     private final RefreshRepository refreshRepository;
+
+    private final RedisBlacklistService blacklistService;
+
 
 
     @Bean
@@ -65,7 +66,7 @@ public class SecurityConfig {
         //경로별 인가 작업
         http
                 .authorizeHttpRequests((auth) -> auth
-                        .requestMatchers("/api/client/**", "/api/member/sign-up","/api/member/login", "/api/member/mailSend", "/api/member/mailCheck", "/api/address/**","/api/address").permitAll()
+                        .requestMatchers("/api/client/**", "/api/member/sign-up","/api/member/login", "/api/member/mailSend", "/api/member/mailCheck", "/api/address/**","/api/address", "/api/member/reissue").permitAll()
                         .requestMatchers("/admin").hasRole("ADMIN")
                         .anyRequest().authenticated());
 
@@ -74,7 +75,7 @@ public class SecurityConfig {
         loginFilter.setFilterProcessesUrl("/api/member/login"); // 로그인 경로 설정
 
         // 로그아웃 필터설정
-        CustomLogoutFilter customLogoutFilter = new CustomLogoutFilter(jwtUtil,refreshRepository);
+        CustomLogoutFilter customLogoutFilter = new CustomLogoutFilter(refreshRepository, blacklistService);
 
 
 //        http
