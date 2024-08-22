@@ -6,7 +6,13 @@ services:
 #    ports:
 #      - 8080:8080
 #    depends_on:
-#      my-ecommercedb:
+#      ecommercedb-user:
+#        condition: service_healthy
+#      ecommercedb-product:
+#        condition: service_healthy
+#      ecommercedb-order:
+#        condition: service_healthy
+#      my-cache-server:
 #        condition: service_healthy
 
   ecommercedb-user:
@@ -48,3 +54,8 @@ services:
       test: [ "CMD","mysqladmin","ping" ]
       interval: 5s
       retries: 10
+
+  my-cache-server:
+    image: redis
+    ports:
+      - 6379:6379

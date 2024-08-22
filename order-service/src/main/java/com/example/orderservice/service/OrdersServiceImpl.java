@@ -12,17 +12,21 @@ import com.example.orderservice.entity.WishListItem;
 import com.example.orderservice.repository.OrdersRepository;
 import com.example.orderservice.entity.Orders;
 import com.example.orderservice.entity.OrdersStatus;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 
+@Slf4j
 @RequiredArgsConstructor
-@Transactional
 @Service
 public class OrdersServiceImpl implements OrdersService {
 
@@ -37,9 +41,10 @@ public class OrdersServiceImpl implements OrdersService {
 
     @Override
     public List<OrdersResponseDto> getOrderList(String email){
+        // email로 member 정보 받아오기
+        MemberResponseDto user = getUserByEmail(email);
 
-        MemberResponseDto user = memberServiceClient.getUserByEmail(email);
-
+        // 사용자 정보 없을때 예외 처리
         if (user == null) {
             throw new CustomException("사용자를 찾을 수 없습니다.");
         }
@@ -50,10 +55,10 @@ public class OrdersServiceImpl implements OrdersService {
         return ordersList.stream()
                 .map(OrdersResponseDto::new)
                 .collect(Collectors.toList());
-
     }
 
     // 주문
+    @Transactional
     @Override
     public List<OrdersResponseDto> addOrders(String email,Long addressId){
 
@@ -66,7 +71,7 @@ public class OrdersServiceImpl implements OrdersService {
             throw new CustomException("장바구니가 비어있습니다.");
         }
 
-        MemberResponseDto user = memberServiceClient.getUserByEmail(email);
+        MemberResponseDto user = getUserByEmail(email);
 
         // 배송지 정보 가지고 오기
         AddressResponseDto address;
@@ -95,7 +100,7 @@ public class OrdersServiceImpl implements OrdersService {
 
         for (WishListItem wishListItem : wishListItems) {
             // ProductService에서 제품 정보 조회
-            ProductResponseDto product = productServiceClient.getProduct(wishListItem.getProductId());
+            ProductResponseDto product = getProduct(wishListItem.getProductId());
 
             // 재고 확인
             if (product.getProductStock() < wishListItem.getCount()) {
@@ -135,7 +140,9 @@ public class OrdersServiceImpl implements OrdersService {
 
 
     // 주문 취소
+    @Transactional
     @Override
+    @CircuitBreaker(name = "productService", fallbackMethod = "productServiceFallback")
     public List<OrdersResponseDto> canceled(Long id, String email){
 
         Orders orders = ordersRepository.findById(id).orElseThrow();
@@ -144,7 +151,7 @@ public class OrdersServiceImpl implements OrdersService {
 
             // 상품의 수량을 복구
             for (OrdersItem item : orders.getOrdersItems()) {
-                ProductResponseDto product = productServiceClient.getProduct(item.getProductId());
+                ProductResponseDto product = getProduct(item.getProductId());
 
                 // 수량 증가 - 저장 까지
                 productServiceClient.increaseStock(product.getProductId(), item.getCount());
@@ -160,6 +167,7 @@ public class OrdersServiceImpl implements OrdersService {
     }
 
     // 반품신청
+    @Transactional
     @Override
     public List<OrdersResponseDto> returned(Long id, String email) {
         Orders orders = ordersRepository.findById(id).orElseThrow();
@@ -178,7 +186,30 @@ public class OrdersServiceImpl implements OrdersService {
         }else {
             throw new CustomException("반품 불가한 상품 입니다");
         }
-
     }
+
+    @Cacheable(value="member", key = "#email")
+    @CircuitBreaker(name = "memberService", fallbackMethod = "memberServiceFallback")
+    public MemberResponseDto getUserByEmail(String email) {
+        return memberServiceClient.getUserByEmail(email);
+    }
+
+    @Cacheable(value = "product", key = "#productId")
+    @CircuitBreaker(name = "productService", fallbackMethod = "productServiceFallback")
+    public ProductResponseDto getProduct(Long productId) {
+        return productServiceClient.getProduct(productId);
+    }
+
+
+    public List<OrdersResponseDto> memberServiceFallback(String email, Throwable throwable) {
+        log.error("Member Service is down: {}", throwable.getMessage());
+        return Collections.emptyList();
+    }
+
+    public ProductResponseDto productServiceFallback(Long productId, Throwable throwable) {
+        log.error("Product Service is down: {}", throwable.getMessage());
+        return new ProductResponseDto();
+    }
+
 
 }
