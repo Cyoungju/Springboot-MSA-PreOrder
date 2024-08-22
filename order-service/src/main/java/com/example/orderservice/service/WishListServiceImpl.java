@@ -9,6 +9,7 @@ import com.example.orderservice.entity.WishList;
 import com.example.orderservice.entity.WishListItem;
 import com.example.orderservice.repository.WishListRepository;
 import feign.FeignException;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -35,6 +36,7 @@ public class WishListServiceImpl implements WishListService {
 
     // 전체 상품 조회
     @Override
+    @CircuitBreaker(name = "userService", fallbackMethod = "memberServiceFallback")
     public WishListResponseDto wishList(String email) {
 
         MemberResponseDto user = memberServiceClient.getUserByEmail(email);
@@ -55,6 +57,7 @@ public class WishListServiceImpl implements WishListService {
     }
 
     @Override
+    @CircuitBreaker(name = "productService", fallbackMethod = "productServiceFallback")
     public WishListResponseDto addWishList(WishListItemDto wishListItemDto, String email) {
 
         // 상품 추가
@@ -106,32 +109,8 @@ public class WishListServiceImpl implements WishListService {
     }
 
 
-    // 위시리스트를 새로 생성하는 메서드
-    private WishList createNewWishList(String email) {
-
-        MemberResponseDto user = memberServiceClient.getUserByEmail(email);
-
-        WishList newWishList = WishList.builder()
-                .memberId(user.getId())
-                .build();
-
-        return wishListRepository.save(newWishList);
-
-    }
-
-    private void totalPriceModify(WishList wishList){
-        // totalPrice 계산
-        List<WishListItem> wishListItems = wishListItemRepository.findByWishList(wishList);
-
-        Long totalPrice = wishListItems.stream().mapToLong(
-                wishListItem -> wishListItem.getProductPrice() * wishListItem.getCount()
-        ).sum();
-
-        wishList.changeTotalPrice(totalPrice);
-
-    }
-
     @Override
+    @CircuitBreaker(name = "userService", fallbackMethod = "memberServiceFallback")
     public WishListResponseDto deleteWishListItem(Long wishListItemId, String email) {
         // 삭제할 WishListItem을 조회
         Optional<WishListItem> optionalWishListItem = wishListItemRepository.findById(wishListItemId);
@@ -172,11 +151,52 @@ public class WishListServiceImpl implements WishListService {
 
     // 이메일을 통해 WishList를 찾기
     @Override
+    @CircuitBreaker(name = "userService", fallbackMethod = "memberServiceFallback")
     public WishList findByMemberEmail(String email){
         MemberResponseDto user = memberServiceClient.getUserByEmail(email);
         WishList wishList = wishListRepository.findByMemberId(user.getId())
                 .orElseGet(() -> createNewWishList(email));
         return wishList;
+    }
+
+
+
+
+    // 위시리스트를 새로 생성하는 메서드
+    @CircuitBreaker(name = "userService", fallbackMethod = "memberServiceFallback")
+    private WishList createNewWishList(String email) {
+
+        MemberResponseDto user = memberServiceClient.getUserByEmail(email);
+
+        WishList newWishList = WishList.builder()
+                .memberId(user.getId())
+                .build();
+
+        return wishListRepository.save(newWishList);
+
+    }
+
+    private void totalPriceModify(WishList wishList){
+        // totalPrice 계산
+        List<WishListItem> wishListItems = wishListItemRepository.findByWishList(wishList);
+
+        Long totalPrice = wishListItems.stream().mapToLong(
+                wishListItem -> wishListItem.getProductPrice() * wishListItem.getCount()
+        ).sum();
+
+        wishList.changeTotalPrice(totalPrice);
+
+    }
+
+
+    public WishListResponseDto memberServiceFallback(String email, Throwable throwable) {
+        log.error("Member Service is down: {}", throwable.getMessage());
+        throw new CustomException("회원 서비스가 현재 사용 불가합니다. 나중에 다시 시도해주세요.");
+    }
+
+    public WishListResponseDto productServiceFallback(WishListItemDto wishListItemDto, String email, Throwable throwable) {
+        log.error("Product Service is down: {}", throwable.getMessage());
+        throw new CustomException("상품 서비스가 현재 사용 불가합니다. 나중에 다시 시도해주세요.");
     }
 
 }
