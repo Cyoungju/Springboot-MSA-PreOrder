@@ -12,7 +12,7 @@ import java.util.Optional;
 
 public interface WishListItemRepository extends JpaRepository<WishListItem, Long> {
     // 특정한 사용자의 모든 장바구니 아이템을 가져올 경우
-    List<WishListItem> findByWishListMemberId(Long memberId);
+    //List<WishListItem> findByWishListMemberId(Long memberId);
 
     Optional<WishListItem> findByWishListAndProductId(WishList wishList, Long productID);
 
@@ -24,4 +24,6 @@ public interface WishListItemRepository extends JpaRepository<WishListItem, Long
     @Modifying // 상태변경 쿼리
     @Query("DELETE FROM WishListItem wl WHERE wl.wishList.id = :wishListId")
     void deleteByWishListId(Long wishListId);
+
+    List<WishListItem> findByWishListMemberEmail(String email);
 }

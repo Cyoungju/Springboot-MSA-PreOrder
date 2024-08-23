@@ -2,8 +2,8 @@ package com.example.orderservice.service;
 
 import com.example.orderservice.client.MemberServiceClient;
 import com.example.orderservice.client.ProductServiceClient;
+import com.example.orderservice.core.utils.EncryptionUtil;
 import com.example.orderservice.dto.AddressResponseDto;
-import com.example.orderservice.dto.MemberResponseDto;
 import com.example.orderservice.dto.OrdersResponseDto;
 import com.example.orderservice.core.exception.CustomException;
 import com.example.orderservice.dto.ProductResponseDto;
@@ -12,10 +12,10 @@ import com.example.orderservice.entity.WishListItem;
 import com.example.orderservice.repository.OrdersRepository;
 import com.example.orderservice.entity.Orders;
 import com.example.orderservice.entity.OrdersStatus;
+import com.example.orderservice.repository.WishListRepository;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,36 +34,41 @@ public class OrdersServiceImpl implements OrdersService {
     
     private final WishListService wishListService;
 
+    private final WishListRepository wishListRepository;
+
     private final MemberServiceClient memberServiceClient;
 
     private final ProductServiceClient productServiceClient;
 
+    private final EncryptionUtil encryptionUtil;
+
 
     @Override
     public List<OrdersResponseDto> getOrderList(String email){
-        // email로 member 정보 받아오기
-        MemberResponseDto user = getUserByEmail(email);
-
-        // 사용자 정보 없을때 예외 처리
-        if (user == null) {
-            throw new CustomException("사용자를 찾을 수 없습니다.");
-        }
 
         // 조회한 회원 ID를 사용하여 주문 목록 조회
-        List<Orders> ordersList = ordersRepository.findByMemberId(user.getId());
+        List<Orders> ordersList = ordersRepository.findByMemberEmail(email);
 
         return ordersList.stream()
-                .map(OrdersResponseDto::new)
+                .map(order -> new OrdersResponseDto(
+                        order.getId(),
+                        order.getTotalPrice(),
+                        order.getOrderStatus().getDesc(),
+                        encryptionUtil.decrypt(order.getAddress()),
+                        encryptionUtil.decrypt(order.getDetailAdr()),
+                        encryptionUtil.decrypt(order.getPhone())
+                ))
                 .collect(Collectors.toList());
     }
 
     // 주문
     @Transactional
     @Override
+    @CircuitBreaker(name = "userService", fallbackMethod = "memberServiceFallback")
     public List<OrdersResponseDto> addOrders(String email,Long addressId){
 
         // wishList 조회
-        Long wishListId = wishListService.findByMemberEmail(email).getId();
+        Long wishListId = wishListRepository.findByMemberEmail(email).get().getId();
         List<WishListItem> wishListItems = wishListService.findAllWishListItem(wishListId);
 
         // 장바구니가 비어 있는 경우 예외 처리
@@ -71,21 +76,19 @@ public class OrdersServiceImpl implements OrdersService {
             throw new CustomException("장바구니가 비어있습니다.");
         }
 
-        MemberResponseDto user = getUserByEmail(email);
-
         // 배송지 정보 가지고 오기
         AddressResponseDto address;
         if(addressId != null){
             address = memberServiceClient.getAddressById(addressId).orElseThrow(() -> new CustomException("선택한 배송지를 찾을 수 없습니다."));;
         }else{
-            address = memberServiceClient.getDefaultAddress(user.getId()) .orElseThrow(() -> new CustomException("기본 배송지가 설정되어 있지 않습니다."));
+            address = memberServiceClient.getDefaultAddress(email) .orElseThrow(() -> new CustomException("기본 배송지가 설정되어 있지 않습니다."));
         }
 
         // 주문생성
         // Order객체생성 - builder로
         Orders orders = Orders.builder()
                 .orderStatus(OrdersStatus.ACCEPTED) // 초기 ACCEPTED
-                .memberId(user.getId())
+                .memberEmail(email)
                 .address(address.getAddress())
                 .detailAdr(address.getDetailAdr())
                 .phone(address.getPhone())
@@ -188,13 +191,8 @@ public class OrdersServiceImpl implements OrdersService {
         }
     }
 
-    @Cacheable(value="member", key = "#email")
-    @CircuitBreaker(name = "memberService", fallbackMethod = "memberServiceFallback")
-    public MemberResponseDto getUserByEmail(String email) {
-        return memberServiceClient.getUserByEmail(email);
-    }
 
-    @Cacheable(value = "product", key = "#productId")
+    //@Cacheable(value = "product", key = "#productId")
     @CircuitBreaker(name = "productService", fallbackMethod = "productServiceFallback")
     public ProductResponseDto getProduct(Long productId) {
         return productServiceClient.getProduct(productId);

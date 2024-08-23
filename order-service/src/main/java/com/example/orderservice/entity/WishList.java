@@ -19,7 +19,9 @@ public class WishList {
 
     private Long totalPrice;
 
-    private Long memberId;
+    private String memberEmail;
+
+    //private Long memberId;
 
     public void changeTotalPrice(Long totalPrice){
         this.totalPrice = totalPrice;
@@ -27,9 +29,9 @@ public class WishList {
 
 
     @Builder
-    public WishList(Long id, Long totalPrice, Long memberId) {
+    public WishList(Long id, Long totalPrice, String memberEmail) {
         this.id = id;
         this.totalPrice = totalPrice;
-        this.memberId = memberId;
+        this.memberEmail = memberEmail;
     }
 }

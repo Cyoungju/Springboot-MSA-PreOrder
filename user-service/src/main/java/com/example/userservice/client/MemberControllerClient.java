@@ -15,19 +15,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/client")
 public class MemberControllerClient {
 
-    private final MemberService memberService;
-
     private final AddressService addressService;
 
-    // 이메일로 회원 정보 조회
-    @GetMapping("/{email}")
-    public MemberResponseDto getUserByEmail(@PathVariable("email") String email) {
-        return memberService.getUserByEmail(email);
-    }
-
-    @GetMapping("/defaultAddress/{memberId}")
-    public AddressResponseDto getDefaultAddress(@PathVariable Long memberId) {
-        return addressService.getDefaultAddress(memberId);
+    @GetMapping("/defaultAddress/{memberEmail}")
+    public AddressResponseDto getDefaultAddress(@PathVariable("memberEmail") String email) {
+        return addressService.getDefaultAddress(email);
     }
 
     @GetMapping("/address/{addressId}")

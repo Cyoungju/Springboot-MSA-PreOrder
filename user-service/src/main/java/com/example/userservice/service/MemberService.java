@@ -9,11 +9,4 @@ import org.springframework.stereotype.Service;
 public interface MemberService {
     void joinProcess(MemberDto memberDto);
 
-    Long memberByEmail(String email);
-
-    Member getMemberByEmail(String email);
-
-    MemberDto getMemberDetailsByEmail(String username);
-
-    MemberResponseDto getUserByEmail(String email);
 }

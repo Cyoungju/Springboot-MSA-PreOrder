@@ -11,11 +11,9 @@ import java.util.Optional;
 
 @FeignClient(name = "user-service")
 public interface MemberServiceClient {
-    @GetMapping("/api/client/{email}")
-    MemberResponseDto getUserByEmail(@PathVariable("email") String email);
 
-    @GetMapping("/api/client/defaultAddress/{memberId}")
-    Optional<AddressResponseDto> getDefaultAddress(@PathVariable("memberId") Long memberId);
+    @GetMapping("/api/client/defaultAddress/{memberEmail}")
+    Optional<AddressResponseDto> getDefaultAddress(@PathVariable("memberEmail") String email);
 
     @GetMapping("/api/client/address/{addressId}")
     Optional<AddressResponseDto> getAddressById(@PathVariable("addressId") Long addressId);
