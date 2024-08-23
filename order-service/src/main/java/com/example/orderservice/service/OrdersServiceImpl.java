@@ -14,6 +14,8 @@ import com.example.orderservice.entity.Orders;
 import com.example.orderservice.entity.OrdersStatus;
 import com.example.orderservice.repository.WishListRepository;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -65,6 +67,8 @@ public class OrdersServiceImpl implements OrdersService {
     @Transactional
     @Override
     @CircuitBreaker(name = "userService", fallbackMethod = "memberServiceFallback")
+    @Retry(name = "userService",  fallbackMethod = "memberServiceFallback")
+    @TimeLimiter(name = "productService")
     public List<OrdersResponseDto> addOrders(String email,Long addressId){
 
         // wishList 조회
@@ -146,6 +150,8 @@ public class OrdersServiceImpl implements OrdersService {
     @Transactional
     @Override
     @CircuitBreaker(name = "productService", fallbackMethod = "productServiceFallback")
+    @Retry(name = "productService", fallbackMethod = "productServiceFallback")
+    @TimeLimiter(name = "productService")
     public List<OrdersResponseDto> canceled(Long id, String email){
 
         Orders orders = ordersRepository.findById(id).orElseThrow();
@@ -191,9 +197,9 @@ public class OrdersServiceImpl implements OrdersService {
         }
     }
 
-
-    //@Cacheable(value = "product", key = "#productId")
     @CircuitBreaker(name = "productService", fallbackMethod = "productServiceFallback")
+    @Retry(name = "productService", fallbackMethod = "productServiceFallback")
+    @TimeLimiter(name = "productService")
     public ProductResponseDto getProduct(Long productId) {
         return productServiceClient.getProduct(productId);
     }

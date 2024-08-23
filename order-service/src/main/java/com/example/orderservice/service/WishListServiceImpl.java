@@ -10,6 +10,8 @@ import com.example.orderservice.entity.WishListItem;
 import com.example.orderservice.repository.WishListRepository;
 import feign.FeignException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -53,6 +55,8 @@ public class WishListServiceImpl implements WishListService {
 
     @Override
     @CircuitBreaker(name = "productService", fallbackMethod = "productServiceFallback")
+    @Retry(name = "productService", fallbackMethod = "productServiceFallback")
+    @TimeLimiter(name = "productService")
     public WishListResponseDto addWishList(WishListItemDto wishListItemDto, String email) {
 
         // 상품 추가
