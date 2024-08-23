@@ -51,8 +51,8 @@ public class AddressServiceImpl implements AddressService{
     }
 
     @Override
-    public AddressResponseDto getDefaultAddress(Long memberId) {
-        Address address = addressRepository.findByMemberIdAndDefaultAdrTrue(memberId)
+    public AddressResponseDto getDefaultAddress(String email) {
+        Address address = addressRepository.findByMemberEmailAndDefaultAdrTrue(email)
                 .orElseThrow(() -> new CustomException("기본 배송지를 찾을 수 없습니다."));
         return new AddressResponseDto(address);
     }

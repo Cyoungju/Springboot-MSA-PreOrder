@@ -13,6 +13,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication
 @EnableFeignClients
 @EnableDiscoveryClient
+@EnableBatchProcessing
 @EnableScheduling // 스케쥴 기능 활성화
 public class OrderServiceApplication {
 

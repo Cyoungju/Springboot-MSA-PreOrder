@@ -27,7 +27,9 @@ public class Orders extends BaseTimeEntity {
     @Column(nullable = false)
     private OrdersStatus orderStatus; // 기본값
 
-    private Long memberId;
+    //private Long memberId;
+
+    private String memberEmail;
 
     // 배송지
     private String address;

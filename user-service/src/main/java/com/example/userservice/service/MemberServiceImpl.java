@@ -70,31 +70,4 @@ public class MemberServiceImpl implements MemberService{
 
     }
 
-    @Override
-    public Long memberByEmail(String email) {
-        Member member = memberRepository.findByEmail(email);
-
-        Long memberId = member.getId();
-
-        return memberId;
-    }
-
-    @Override
-    public Member getMemberByEmail(String email) {
-        return memberRepository.findByEmail(email);
-    }
-
-    @Override
-    public MemberDto getMemberDetailsByEmail(String username) {
-        Member member = memberRepository.findByEmail(username);
-        MemberDto memberDto = new MemberDto();
-        return memberDto.updateDTO(member);
-    }
-
-    @Override
-    public MemberResponseDto getUserByEmail(String email) {
-        // 이메일을 통해 회원을 조회하고, MemberResponseDto로 변환하여 반환
-        Member member = memberRepository.findByEmail(email);
-        return new MemberResponseDto(member.getId(), member.getEmail(), member.getUsername());
-    }
 }

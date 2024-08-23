@@ -27,25 +27,20 @@ import java.util.stream.Collectors;
 public class WishListServiceImpl implements WishListService {
 
     private final WishListItemRepository wishListItemRepository;
+
     private final WishListRepository wishListRepository;
 
-
-    private final MemberServiceClient memberServiceClient;
     private final ProductServiceClient productServiceClient;
 
 
     // 전체 상품 조회
     @Override
-    @CircuitBreaker(name = "userService", fallbackMethod = "memberServiceFallback")
     public WishListResponseDto wishList(String email) {
 
-        MemberResponseDto user = memberServiceClient.getUserByEmail(email);
-        List<WishListItem> items = wishListItemRepository.findByWishListMemberId(user.getId()); // ID로 아이템 조회
+        List<WishListItem> items = wishListItemRepository.findByWishListMemberEmail(email); // ID로 아이템 조회
 
-
-        WishList wishList = wishListRepository.findByMemberId(user.getId())
+        WishList wishList = wishListRepository.findByMemberEmail(email)
                 .orElseGet(() -> createNewWishList(email));
-
 
         Long totalPrice = wishList.getTotalPrice();
         List<WishListItemListDto> itemDtos= items.stream()
@@ -66,7 +61,8 @@ public class WishListServiceImpl implements WishListService {
         Long productId = wishListItemDto.getProductId();
 
         // 이메일을 통해 WishList를 찾기
-        WishList wishList = findByMemberEmail(email);
+        WishList wishList = wishListRepository.findByMemberEmail(email)
+                .orElseGet(() -> createNewWishList(email));
 
         // WishList에 해당하는 productID를 가진 wishListItem이 있는지 확인
         Optional<WishListItem> wishListItemOptional = wishListItemRepository.findByWishListAndProductId(wishList, productId);
@@ -87,6 +83,7 @@ public class WishListServiceImpl implements WishListService {
                 // WishListItem 생성
                 WishListItem newWishListItem = WishListItem.builder()
                         .productId(productId)
+                        .memberEmail(email)
                         .wishList(wishList)
                         .count(wishListItemCount)
                         .productName(product.getProductName())
@@ -110,7 +107,6 @@ public class WishListServiceImpl implements WishListService {
 
 
     @Override
-    @CircuitBreaker(name = "userService", fallbackMethod = "memberServiceFallback")
     public WishListResponseDto deleteWishListItem(Long wishListItemId, String email) {
         // 삭제할 WishListItem을 조회
         Optional<WishListItem> optionalWishListItem = wishListItemRepository.findById(wishListItemId);
@@ -123,8 +119,8 @@ public class WishListServiceImpl implements WishListService {
         wishListItemRepository.deleteById(wishListItemId);
         
         // 수량변경
-        MemberResponseDto user = memberServiceClient.getUserByEmail(email);
-        WishList wishList = wishListRepository.findByMemberId(user.getId()).orElseThrow(() -> new CustomException("위시리스트가 비어있습니다."));
+        //MemberResponseDto user = memberServiceClient.getUserByEmail(email);
+        WishList wishList = wishListRepository.findByMemberEmail(email).orElseThrow(() -> new CustomException("위시리스트가 비어있습니다."));
         totalPriceModify(wishList);
         
         return wishList(email);
@@ -149,27 +145,11 @@ public class WishListServiceImpl implements WishListService {
     }
 
 
-    // 이메일을 통해 WishList를 찾기
-    @Override
-    @CircuitBreaker(name = "userService", fallbackMethod = "memberServiceFallback")
-    public WishList findByMemberEmail(String email){
-        MemberResponseDto user = memberServiceClient.getUserByEmail(email);
-        WishList wishList = wishListRepository.findByMemberId(user.getId())
-                .orElseGet(() -> createNewWishList(email));
-        return wishList;
-    }
-
-
-
-
     // 위시리스트를 새로 생성하는 메서드
-    @CircuitBreaker(name = "userService", fallbackMethod = "memberServiceFallback")
     private WishList createNewWishList(String email) {
 
-        MemberResponseDto user = memberServiceClient.getUserByEmail(email);
-
         WishList newWishList = WishList.builder()
-                .memberId(user.getId())
+                .memberEmail(email)
                 .build();
 
         return wishListRepository.save(newWishList);
@@ -186,12 +166,6 @@ public class WishListServiceImpl implements WishListService {
 
         wishList.changeTotalPrice(totalPrice);
 
-    }
-
-
-    public WishListResponseDto memberServiceFallback(String email, Throwable throwable) {
-        log.error("Member Service is down: {}", throwable.getMessage());
-        throw new CustomException("회원 서비스가 현재 사용 불가합니다. 나중에 다시 시도해주세요.");
     }
 
     public WishListResponseDto productServiceFallback(WishListItemDto wishListItemDto, String email, Throwable throwable) {

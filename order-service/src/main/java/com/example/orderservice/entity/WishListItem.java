@@ -15,6 +15,8 @@ public class WishListItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private String memberEmail;
+
     private String productName;
 
     private Long productPrice;

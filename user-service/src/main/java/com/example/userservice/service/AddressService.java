@@ -8,6 +8,6 @@ import org.springframework.stereotype.Service;
 public interface AddressService {
 
     void addAddress(AddressAddDto addressAddDto, String email);
-    AddressResponseDto getDefaultAddress(Long memberId);
+    AddressResponseDto getDefaultAddress(String email);
     AddressResponseDto getAddressById(Long addressId);
 }

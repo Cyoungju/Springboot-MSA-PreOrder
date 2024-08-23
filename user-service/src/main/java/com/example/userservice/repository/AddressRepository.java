@@ -15,7 +15,6 @@ public interface AddressRepository extends JpaRepository<Address, Long> {
     @Query("UPDATE Address a SET a.defaultAdr = false WHERE a.member.id = :memberId")
     void updateDefaultAdrToFalse(@Param("memberId") Long memberId);
 
-    Optional<Address> findByMemberIdAndDefaultAdrTrue(Long memberId);
+    Optional<Address> findByMemberEmailAndDefaultAdrTrue(String email);
 
-    Optional<Address> findByMemberId(Long memberId);
 }
