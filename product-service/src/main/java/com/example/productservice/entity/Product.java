@@ -28,7 +28,7 @@ public class Product extends BaseTimeEntity {
     @Column(nullable = false)
     private int stock;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = ProductStatusConverter.class)
     @Column(nullable = false)
     private ProductStatus productStatus; // 기본값 AVAILABLE
 

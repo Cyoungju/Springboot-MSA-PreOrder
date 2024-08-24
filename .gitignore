@@ -39,7 +39,7 @@ out/
 ### add ###
 application.properties
 application.yml
-mysql_data_order/
-mysql_data_user/
-mysql_data_product/
+mysql_order/
+mysql_user/
+mysql_product/
 .env

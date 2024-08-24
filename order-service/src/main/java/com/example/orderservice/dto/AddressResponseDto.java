@@ -1,5 +1,6 @@
 package com.example.orderservice.dto;
 
+import com.example.orderservice.core.utils.EncryptionUtil;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

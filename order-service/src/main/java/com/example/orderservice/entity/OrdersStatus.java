@@ -7,6 +7,7 @@ import java.util.Arrays;
 
 @Getter
 public enum OrdersStatus {
+    ACCEPTED_FAILED("결제실패", "0"),
     ACCEPTED("결제완료", "1"),
     ON_DELIVERY("배달중", "2"),
     SHIPPED("배달완료", "3"),

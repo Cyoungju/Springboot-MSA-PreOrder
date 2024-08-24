@@ -2,6 +2,9 @@ package com.example.orderservice.controller;
 
 import com.example.orderservice.core.utils.EncryptionUtil;
 import com.example.orderservice.dto.OrdersResponseDto;
+import com.example.orderservice.dto.OrdersSuccessDetails;
+import com.example.orderservice.dto.PaymentScreenResponseDto;
+import com.example.orderservice.dto.PurchaseProductDto;
 import com.example.orderservice.service.OrdersService;
 import com.example.orderservice.core.utils.ApiUtils;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +22,23 @@ public class OrdersController {
 
     private final OrdersService ordersService;
 
+    // 결제 진입
+    @PostMapping("/purchase")
+    public ResponseEntity<?> purchaseProduct(
+            @RequestHeader("X-Authenticated-User") String email,
+            @RequestBody PurchaseProductDto purchaseProductDto){
+
+        PaymentScreenResponseDto response = ordersService.purchaseProduct(email, purchaseProductDto);
+        return  ResponseEntity.ok(response);
+    }
+
+    // 결제
+    @PostMapping("/attempt-payment")
+    public ResponseEntity<OrdersSuccessDetails> attemptPaymentForProduct(
+            @RequestBody PaymentScreenResponseDto paymentScreenData) {
+        OrdersSuccessDetails response = ordersService.attemptPaymentForProduct(paymentScreenData);
+        return ResponseEntity.ok(response);
+    }
 
     @GetMapping
     public ResponseEntity<?> getList(@RequestHeader("X-Authenticated-User") String email){
@@ -53,4 +73,6 @@ public class OrdersController {
         ApiUtils.ApiResult<?> apiResult = ApiUtils.success(ordersResponseDto);
         return ResponseEntity.ok(apiResult);
     }
+
+
 }

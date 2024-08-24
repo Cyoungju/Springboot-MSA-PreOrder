@@ -21,7 +21,7 @@ services:
       MYSQL_ROOT_PASSWORD : ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
     volumes:
-      - ./mysql_data_user:/var/lib/mysql
+      - ./mysql_user:/var/lib/mysql
     ports:
       - 3306:3306
     healthcheck:
@@ -34,7 +34,7 @@ services:
       MYSQL_ROOT_PASSWORD : ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
     volumes:
-      - ./mysql_data_product:/var/lib/mysql
+      - ./mysql_product:/var/lib/mysql
     ports:
       - 3307:3306
     healthcheck:
@@ -47,7 +47,7 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
     volumes:
-      - ./mysql_data_order:/var/lib/mysql
+      - ./mysql_order:/var/lib/mysql
     ports:
       - 3308:3306
     healthcheck:
