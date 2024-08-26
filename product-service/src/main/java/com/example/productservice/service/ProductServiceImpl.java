@@ -72,6 +72,7 @@ public class ProductServiceImpl implements ProductService {
 
     // 제품 재고 감소
     @Override
+    @Transactional
     public void decreaseStock(Long productId, int count) {
         Product product = productRepository.findById(productId).orElseThrow(() -> new RuntimeException("제품을 찾을 수 없습니다."));
         if (product.getStock() < count) {
@@ -82,6 +83,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional
     public void increaseStock(Long productId, int count) {
         Product product = productRepository.findById(productId).orElseThrow(() -> new RuntimeException("제품을 찾을 수 없습니다."));
         product.increaseStock(count);

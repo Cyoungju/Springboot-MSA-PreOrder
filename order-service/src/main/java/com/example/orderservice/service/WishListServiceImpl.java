@@ -60,7 +60,7 @@ public class WishListServiceImpl implements WishListService {
     public WishListResponseDto addWishList(WishListItemDto wishListItemDto, String email) {
 
         // 상품 추가
-        Long wishListItemCount = wishListItemDto.getCount();
+        int wishListItemCount = wishListItemDto.getCount();
 
         Long productId = wishListItemDto.getProductId();
 

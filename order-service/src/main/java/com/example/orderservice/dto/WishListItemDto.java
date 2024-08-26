@@ -11,5 +11,5 @@ public class WishListItemDto {
 
     private Long productId;
 
-    private Long count;
+    private int count;
 }

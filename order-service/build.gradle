@@ -52,13 +52,15 @@ dependencies {
 
     //feign client
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
-
-    // https://mvnrepository.com/artifact/io.github.resilience4j/resilience4j-spring-boot3
     implementation group: 'io.github.resilience4j', name: 'resilience4j-spring-boot3', version: '2.2.0'
-    // https://mvnrepository.com/artifact/io.github.resilience4j/resilience4j-retry
     implementation group: 'io.github.resilience4j', name: 'resilience4j-retry', version: '2.2.0'
-    // https://mvnrepository.com/artifact/io.github.resilience4j/resilience4j-circuitbreaker
     implementation group: 'io.github.resilience4j', name: 'resilience4j-circuitbreaker', version: '2.2.0'
+
+
+    // redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+
 }
 
 dependencyManagement {

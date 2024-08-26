@@ -32,6 +32,8 @@ public class Orders extends BaseTimeEntity {
     private String memberEmail;
 
     // 배송지
+    private Long addressId;
+
     private String address;
 
     private String detailAdr;

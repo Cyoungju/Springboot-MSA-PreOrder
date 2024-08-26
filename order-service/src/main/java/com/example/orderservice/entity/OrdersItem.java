@@ -25,7 +25,7 @@ public class OrdersItem {
 
     private Long productPrice;
 
-    private Long count;
+    private int count;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "orders_id")

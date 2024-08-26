@@ -29,9 +29,9 @@ public class WishListItem {
     private WishList wishList;
 
     // 수량
-    private Long count;
+    private int count;
 
-    public void changeCount(Long count){
+    public void changeCount(int count){
         this.count = count;
     }
 
