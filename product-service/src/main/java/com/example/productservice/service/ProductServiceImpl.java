@@ -12,8 +12,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
-
 
 @Transactional(readOnly = true) // 읽기 전용
 @RequiredArgsConstructor
@@ -23,9 +21,11 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
 
     @Override
-    public Page<ProductDto> findAll(ProductStatus productStatus, Pageable pageable) {
+    public Page<ProductDto> findAll(Pageable pageable) {
 
-        Page<ProductDto> productsDto = findByProductStatus(productStatus, pageable);
+        Page<ProductDto> productsDto = findByStatusNot(pageable);
+
+        System.out.println();
 
         if(productsDto.isEmpty()){
             throw new CustomException("해당 상품이 비어있습니다!");
@@ -34,8 +34,8 @@ public class ProductServiceImpl implements ProductService {
         return productsDto;
     }
 
-    private Page<ProductDto> findByProductStatus(ProductStatus productStatus, Pageable pageable){
-        Page<Product> products = productRepository.findByProductStatus(productStatus, pageable);
+    private Page<ProductDto> findByStatusNot(Pageable pageable){
+        Page<Product> products = productRepository.findByStatusNot(ProductStatus.DISCONTINUED, pageable);
         return products.map(ProductDto::new);
     }
 
@@ -72,6 +72,7 @@ public class ProductServiceImpl implements ProductService {
 
     // 제품 재고 감소
     @Override
+    @Transactional
     public void decreaseStock(Long productId, int count) {
         Product product = productRepository.findById(productId).orElseThrow(() -> new RuntimeException("제품을 찾을 수 없습니다."));
         if (product.getStock() < count) {
@@ -82,6 +83,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional
     public void increaseStock(Long productId, int count) {
         Product product = productRepository.findById(productId).orElseThrow(() -> new RuntimeException("제품을 찾을 수 없습니다."));
         product.increaseStock(count);

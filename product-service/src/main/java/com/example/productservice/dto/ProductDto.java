@@ -34,7 +34,7 @@ public class ProductDto {
     private int stock;
 
     @NotEmpty
-    private ProductStatus productStatus; // 상품의 상태
+    private String productStatus; // 상품의 상태
 
 
     public ProductDto(Product product) {
@@ -43,6 +43,7 @@ public class ProductDto {
         this.content = product.getContent();
         this.price = product.getPrice();
         this.stock = product.getStock();
-        this.productStatus = product.getProductStatus();
+        this.productStatus = product.getProductStatus().getDesc();
+
     }
 }

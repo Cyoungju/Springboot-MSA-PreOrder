@@ -13,14 +13,14 @@ import lombok.Setter;
 public class WishListItemListDto {
     private Long wishListItemId;
 
-    private Long count;
+    private int count;
 
     private String productName;
 
     private Long price;
 
 
-    public WishListItemListDto(Long wishListItemId, Long count, String productName, Long price) {
+    public WishListItemListDto(Long wishListItemId, int count, String productName, Long price) {
         this.wishListItemId = wishListItemId;
         this.count = count;
         this.productName = productName;

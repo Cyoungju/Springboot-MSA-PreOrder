@@ -31,7 +31,7 @@ public class ProductController {
     // 전체 상품 조회
     @GetMapping
     public ResponseEntity<?> findAll(@PageableDefault(page = 1, size = 10) Pageable pageable) {
-        Page<ProductDto> productDtos = productService.findAll(ProductStatus.AVAILABLE, pageable);
+        Page<ProductDto> productDtos = productService.findAll(pageable);
         ApiUtils.ApiResult<?> apiResult = ApiUtils.success(productDtos);
         return ResponseEntity.ok(apiResult);
     }

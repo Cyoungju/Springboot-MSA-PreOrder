@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public interface ProductService {
-    Page<ProductDto> findAll(ProductStatus productStatus, Pageable pageable);
+    Page<ProductDto> findAll(Pageable pageable);
 
     ProductDto findById(Long id);
 
