@@ -12,8 +12,6 @@ import java.util.Set;
 
 @Component
 public class RecoveryScheduler {
-    @Autowired
-    private RedisService redisService;
 
     @Autowired
     private PaymentScreenResponseDtoRepository paymentScreenResponseRepository;
@@ -37,8 +35,8 @@ public class RecoveryScheduler {
                 System.out.println("Increased stock for productId " + productId + " by " + count);
 
                 // 복구 작업 완료 후 Redis에서 정보 삭제
-                paymentScreenResponseRepository.deleteById(orderSignature);
-                System.out.println("Deleted key: " + orderSignature);
+               paymentScreenResponseRepository.deleteById(orderSignature);
+               System.out.println("Deleted key: " + orderSignature);
             }
         } catch (Exception e) {
             // 예외를 로깅

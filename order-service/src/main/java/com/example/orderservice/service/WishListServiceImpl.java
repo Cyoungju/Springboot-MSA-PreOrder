@@ -1,6 +1,5 @@
 package com.example.orderservice.service;
 
-import com.example.orderservice.client.MemberServiceClient;
 import com.example.orderservice.client.ProductServiceClient;
 import com.example.orderservice.dto.*;
 import com.example.orderservice.core.exception.CustomException;
@@ -27,13 +26,9 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 public class WishListServiceImpl implements WishListService {
-
     private final WishListItemRepository wishListItemRepository;
-
     private final WishListRepository wishListRepository;
-
     private final ProductServiceClient productServiceClient;
-
 
     // 전체 상품 조회
     @Override

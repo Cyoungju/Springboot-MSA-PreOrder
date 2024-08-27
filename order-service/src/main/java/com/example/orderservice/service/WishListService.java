@@ -2,7 +2,6 @@ package com.example.orderservice.service;
 
 import com.example.orderservice.dto.WishListResponseDto;
 import com.example.orderservice.dto.WishListItemDto;
-import com.example.orderservice.entity.WishList;
 import com.example.orderservice.entity.WishListItem;
 import org.springframework.stereotype.Service;
 

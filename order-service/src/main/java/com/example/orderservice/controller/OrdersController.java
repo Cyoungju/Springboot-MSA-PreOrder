@@ -1,6 +1,5 @@
 package com.example.orderservice.controller;
 
-import com.example.orderservice.core.utils.EncryptionUtil;
 import com.example.orderservice.dto.*;
 import com.example.orderservice.service.OrdersService;
 import com.example.orderservice.core.utils.ApiUtils;
@@ -8,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.security.Principal;
 import java.util.List;
 
 
