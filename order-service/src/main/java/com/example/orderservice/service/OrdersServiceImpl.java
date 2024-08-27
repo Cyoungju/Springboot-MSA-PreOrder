@@ -11,7 +11,6 @@ import com.example.orderservice.repository.OrdersItemRepository;
 import com.example.orderservice.repository.OrdersRepository;
 import com.example.orderservice.entity.Orders;
 import com.example.orderservice.entity.OrdersStatus;
-import com.example.orderservice.repository.PaymentScreenResponseDtoRepository;
 import com.example.orderservice.repository.WishListRepository;
 import feign.FeignException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
@@ -26,7 +25,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 
@@ -50,17 +48,13 @@ public class OrdersServiceImpl implements OrdersService {
 
     private final RedisService redisService;
 
-    private final PaymentScreenResponseDtoRepository paymentScreenResponseRepository;
-
 
     // 결제 진입 API
     @Override
     public PaymentScreenResponseDto purchaseProduct(String email, PurchaseProductDto purchaseProductDto){
-        Long productId = purchaseProductDto.getProductId();
 
         // 상품정보 조회
         ProductResponseDto product = getProduct(purchaseProductDto.getProductId());
-
 
         int count = purchaseProductDto.getCount();
 
@@ -76,9 +70,7 @@ public class OrdersServiceImpl implements OrdersService {
         String orderSignature = email+":"+UUID.randomUUID().toString();
 
 
-//        try {
-            // Redis에 결제 시도 정보 저장 (30분 동안 유효)
-
+        try {
             // 배송지 정보 가지고 오기
             AddressResponseDto address = getAddress(purchaseProductDto.getAddressId(), email);
 
@@ -95,40 +87,42 @@ public class OrdersServiceImpl implements OrdersService {
                     decodedPhone
             );
 
-        PaymentScreenResponseDto paymentScreenResponseDto = new PaymentScreenResponseDto(
-                orderSignature,
-                new ProductResponseDto(
-                        product.getProductId(),
-                        product.getProductName(),
-                        product.getProductPrice(),
-                        product.getProductStock(),
-                        count
-                ),
-                decryptedAddress,
-                product.getProductPrice() * count
-        );
+            PaymentScreenResponseDto paymentScreenResponseDto = new PaymentScreenResponseDto(
+                    orderSignature,
+                    new ProductResponseDto(
+                            product.getProductId(),
+                            product.getProductName(),
+                            product.getProductPrice(),
+                            product.getProductStock(),
+                            count
+                    ),
+                    decryptedAddress,
+                    product.getProductPrice() * count
+            );
+            // 결제 정보 redis에 저장 - 30분
+            redisService.saveOrderInfo(paymentScreenResponseDto);
 
-        redisService.saveOrderInfo(paymentScreenResponseDto);
+            // 결제 화면에서 보여줄 정보 반환
+            return paymentScreenResponseDto;
 
-        // 결제 화면에서 보여줄 정보 반환
-        return paymentScreenResponseDto;
-//        }catch (Exception e){
-//            // 결제 실패 시 재고 복구
-//            productServiceClient.increaseStock(product.getProductId(), count);
-//
-//            throw new CustomException("결제 완료에 실패했습니다. 다시 시도해 주세요.");
-//        }
+        }catch (Exception e){
+            // 결제 실패 시 재고 복구
+            productServiceClient.increaseStock(product.getProductId(), count);
+
+            throw new CustomException("결제 완료에 실패했습니다. 다시 시도해 주세요.");
+        }
     }
 
     //결제 API
     //결제 시도
     @Override
     @Transactional
-    @CircuitBreaker(name = "productService", fallbackMethod = "productServicePaymentsFallback")
-    @Retry(name = "productService", fallbackMethod = "productServicePaymentsFallback")
+    @CircuitBreaker(name = "productService", fallbackMethod = "productServicePaymentsFallback1")
+    @Retry(name = "productService", fallbackMethod = "productServicePaymentsFallback1")
     public OrderSuccess attemptPaymentForProduct(String email, String orderSignature) {
+        //redis에 저장된 결제 정보 조회
+        PaymentScreenResponseDto paymentScreenData = redisService.getPurchaseProduct(orderSignature);
 
-        PaymentScreenResponseDto paymentScreenData = paymentScreenResponseRepository.findById(orderSignature).orElse(null);
 
         if (paymentScreenData == null || !paymentScreenData.getOrderSignature().equals(orderSignature)) {
             throw new CustomException("결제 시도 정보가 유효하지 않습니다.");
@@ -139,19 +133,47 @@ public class OrdersServiceImpl implements OrdersService {
             Long productId = paymentScreenData.getProduct().getProductId();
             int count = paymentScreenData.getProduct().getProductCount();
 
-            // 수량체크
+            // 수량체크 - 재고확인
             ProductResponseDto product = getProduct(productId);
-            if (product.getProductStock() < count) {
-                throw new CustomException("결제 시점에 재고가 부족합니다: " + product.getProductName());
-            }
+//            if (product.getProductStock() < count) {
+//                throw new CustomException("결제 시점에 재고가 부족합니다: " + product.getProductName());
+//            }
+            // 주문 생성
+            Orders orders = Orders.builder()
+                    .orderStatus(OrdersStatus.ACCEPTED) // 초기 상태
+                    .memberEmail(email)
+                    .address(encryptionUtil.encrypt(paymentScreenData.getAddress().getAddress()))
+                    .detailAdr(encryptionUtil.encrypt(paymentScreenData.getAddress().getDetailAdr()))
+                    .phone(encryptionUtil.encrypt(paymentScreenData.getAddress().getPhone()))
+                    .build();
+
+            OrdersItem ordersItem = OrdersItem.builder()
+                    .productId(productId)
+                    .orders(orders)
+                    .count(count)
+                    .productPrice(product.getProductPrice() * count)
+                    .productName(product.getProductName())
+                    .build();
+
+            orders.changeOrderItem(Collections.singletonList(ordersItem));
+            orders.changeTotalPrice(ordersItem.getProductPrice());
+
+
             // 결제 완료 후 Redis에서 정보 삭제
-            paymentScreenResponseRepository.deleteById(orderSignature);
+            redisService.deletePurchaseProduct(orderSignature);
 
 
-            // order생성
-            return completePaymentForProduct(email, paymentScreenData);
+            // 결제 완료 처리
+            return completePaymentForProduct(orders, paymentScreenData);
         } catch (Exception e) {
             log.error("결제 시도 중 오류 발생: {}", e.getMessage());
+
+            // 주문 상태를 ACCEPTED_FAILED로 업데이트
+            Orders orders = ordersRepository.findByMemberEmailAndOrderStatus(email, OrdersStatus.ACCEPTED)
+                    .orElseThrow(() -> new CustomException("주문을 찾을 수 없습니다."));
+            orders.changeOrderStatus(OrdersStatus.ACCEPTED_FAILED);
+            ordersRepository.save(orders);
+
             throw new CustomException("결제 시도에 실패했습니다. 다시 시도해 주세요.");
 
         }
@@ -160,38 +182,19 @@ public class OrdersServiceImpl implements OrdersService {
 
     // 결제 완료
     @Transactional
-    @CircuitBreaker(name = "productService", fallbackMethod = "productServicePaymentsFallback")
-    @Retry(name = "productService", fallbackMethod = "productServicePaymentsFallback")
+    @CircuitBreaker(name = "productService", fallbackMethod = "productServicePaymentsFallback2")
+    @Retry(name = "productService", fallbackMethod = "productServicePaymentsFallback2")
     @TimeLimiter(name = "productService")
-    public OrderSuccess completePaymentForProduct(String email,PaymentScreenResponseDto paymentScreenData) {
+    public OrderSuccess completePaymentForProduct(Orders orders, PaymentScreenResponseDto paymentScreenData) {
 
         // 선택한 상품 정보 조회
         ProductResponseDto product = paymentScreenData.getProduct();
-        AddressResponseDto address = paymentScreenData.getAddress();
         int count =paymentScreenData.getProduct().getProductCount();
 
         try {
-            // 주문 생성
-            Orders orders = Orders.builder()
-                    .orderStatus(OrdersStatus.ACCEPTED) // 결제 완료 상태
-                    .memberEmail(email)
-                    .address(encryptionUtil.encrypt(address.getAddress()))
-                    .detailAdr(encryptionUtil.encrypt(address.getDetailAdr()))
-                    .phone(encryptionUtil.encrypt(address.getPhone()))
-                    .build();
-
-            // OrdersItem 생성
-            OrdersItem ordersItem = OrdersItem.builder()
-                    .productId(product.getProductId())
-                    .orders(orders)
-                    .count(count)
-                    .productPrice(product.getProductPrice() * count)
-                    .productName(product.getProductName())
-                    .build();
-
             // 주문에 아이템 추가 및 총 가격 설정
-            orders.changeOrderItem(Collections.singletonList(ordersItem));
-            orders.changeTotalPrice(ordersItem.getProductPrice());
+            orders.changeOrderStatus(OrdersStatus.ACCEPTED); // 결제 완료 상태
+            orders.changeTotalPrice(product.getProductPrice() * count);
 
 
             // 주문 저장
@@ -199,13 +202,15 @@ public class OrdersServiceImpl implements OrdersService {
 
             // 주문 완료된 정보 반환
             return
-                new OrderSuccess(
-                        orders.getId(),
-                        orders.getCreateAt(),
-                        orders.getOrderStatus().getDesc()
-                );
+                    new OrderSuccess(
+                            orders.getId(),
+                            orders.getCreateAt(),
+                            orders.getOrderStatus().getDesc()
+                    );
 
         }catch (Exception e){
+            orders.changeOrderStatus(OrdersStatus.ACCEPTED_FAILED);
+            ordersRepository.save(orders);
             // 결제 실패 시 재고 복구
             productServiceClient.increaseStock(product.getProductId(), count);
 
@@ -269,14 +274,14 @@ public class OrdersServiceImpl implements OrdersService {
         );
 
         return
-            new OrdersSuccessDetails(
-                orders.getId(),
-                orders.getOrderStatus().getDesc(),
-                orders.getCreateAt(),
-                products,
-                decryptedAddress,
-                orders.getTotalPrice()
-            );
+                new OrdersSuccessDetails(
+                        orders.getId(),
+                        orders.getOrderStatus().getDesc(),
+                        orders.getCreateAt(),
+                        products,
+                        decryptedAddress,
+                        orders.getTotalPrice()
+                );
     }
 
     // 주문
@@ -436,7 +441,12 @@ public class OrdersServiceImpl implements OrdersService {
         }
     }
 
-    public OrderSuccess productServicePaymentsFallback(PaymentScreenResponseDto paymentScreenData, Throwable throwable) {
+    public OrderSuccess productServicePaymentsFallback1(String email, String orderSignature, Throwable throwable) {
+
+        return new OrderSuccess();
+    }
+
+    public OrderSuccess productServicePaymentsFallback2(Orders orders, PaymentScreenResponseDto paymentScreenData, Throwable throwable) {
 
         return new OrderSuccess();
     }
