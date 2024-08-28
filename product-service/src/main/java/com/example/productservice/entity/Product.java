@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "product")
 public class Product extends BaseTimeEntity {
 
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -46,11 +47,16 @@ public class Product extends BaseTimeEntity {
         this.productStatus = productStatus;
     }
 
-    public void increaseStock(int count) {
-        this.stock += count;
+    public void getStock(int count){
+        this.stock = count;
     }
 
-    public void decreaseStock(int count) {
-        this.stock -= count;
-    }
+//    public void increaseStock(int count) {
+//        this.stock += count;
+//    }
+//
+//    public void decreaseStock(int count) {
+//        int s = this.stock - count;
+//        this.stock = Math.max(s, 0);
+//    }
 }

@@ -51,7 +51,7 @@ public class WishListServiceImpl implements WishListService {
     @Override
     @CircuitBreaker(name = "productService", fallbackMethod = "productServiceFallback")
     @Retry(name = "productService", fallbackMethod = "productServiceFallback")
-    @TimeLimiter(name = "productService")
+    //@TimeLimiter(name = "productService")
     public WishListResponseDto addWishList(WishListItemDto wishListItemDto, String email) {
 
         // 상품 추가

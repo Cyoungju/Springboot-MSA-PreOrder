@@ -34,4 +34,10 @@ public class ProductControllerClient {
     public void increaseStock(@PathVariable("id") Long productId, @RequestParam("count") int count) {
         productService.increaseStock(productId, count);
     }
+
+    @PostMapping("/products/{id}")
+    public int getStock(@PathVariable("id") Long productId){
+        return productService.getStock(productId);
+    }
+
 }

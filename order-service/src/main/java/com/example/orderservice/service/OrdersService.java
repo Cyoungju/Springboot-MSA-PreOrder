@@ -7,13 +7,11 @@ import java.util.List;
 
 @Service
 public interface OrdersService {
-    PaymentScreenResponseDto purchaseProduct(String email, PurchaseProductDto purchaseProductDto);
-    OrderSuccess attemptPaymentForProduct(String email, String orderSignature);
-
-    OrdersSuccessDetails getOrderDetail(String email, Long orderId);
+    OrdersResponseDto purchaseProductDirectly(String email, PurchaseProductDto purchaseProductDto);
+    OrdersSuccessDetails processPayment(Long orderId);
     List<OrdersResponseDto> getOrderList(String id);
-    List<OrdersResponseDto> addOrders(String email, Long addressId);
+    OrdersResponseDto addOrders(String email, Long addressId);
     List<OrdersResponseDto> canceled(Long id, String email);
     List<OrdersResponseDto> returned(Long id, String email);
-
+    OrdersSuccessDetails getOrderDetail(String email, Long id);
 }

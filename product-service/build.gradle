@@ -42,6 +42,11 @@ dependencies {
     //Eureka
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    //redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation group: 'org.redisson', name: 'redisson-spring-boot-starter', version: '3.35.0'
+
 }
 dependencyManagement {
     imports {

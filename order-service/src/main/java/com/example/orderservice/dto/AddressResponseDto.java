@@ -10,7 +10,6 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AddressResponseDto {
-    private String addressName;
 
     private String address;
 

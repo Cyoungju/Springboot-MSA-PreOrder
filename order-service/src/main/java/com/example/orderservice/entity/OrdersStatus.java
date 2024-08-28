@@ -7,14 +7,16 @@ import java.util.Arrays;
 
 @Getter
 public enum OrdersStatus {
-    ACCEPTED_FAILED("결제실패", "0"),
-    ACCEPTED("결제완료", "1"),
+    ACCEPTED("결제 완료", "1"),
     ON_DELIVERY("배달중", "2"),
-    SHIPPED("배달완료", "3"),
+    SHIPPED("배달 완료", "3"),
     CANCELED("취소", "4"),
     CONFIRMED("확정", "5"),
     RETURN_REQUESTED("반품 진행중", "6"),
-    RETURNED("반품완료", "7");
+    RETURNED("반품 완료", "7"),
+
+    PAYMENT_IN_PROGRESS("결제 진행 중", "9"),
+    ACCEPTED_FAILED("결제 취소", "8");
 
 
     private String desc;

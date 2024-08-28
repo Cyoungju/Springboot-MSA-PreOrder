@@ -22,4 +22,7 @@ public interface ProductService {
     void decreaseStock(Long productId, int count);
 
     void increaseStock(Long productId, int count);
+
+    int getStock(Long productId);
+
 }
