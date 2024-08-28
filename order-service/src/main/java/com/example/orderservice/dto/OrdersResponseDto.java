@@ -16,10 +16,10 @@ public class OrdersResponseDto {
 
     private Long id;
 
-    private Long totalPrice;
+    private LocalDateTime createAt;
 
     private String ordersStatus;
 
-    private LocalDateTime createAt;
+    private Long totalPrice;
 
 }

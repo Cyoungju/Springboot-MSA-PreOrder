@@ -17,7 +17,5 @@ public class ProductResponseDto {
 
     private Long productPrice;
 
-    private int productStock;
-
     private int productCount;
 }
