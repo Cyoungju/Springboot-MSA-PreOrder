@@ -7,15 +7,11 @@ import com.example.orderservice.dto.*;
 import com.example.orderservice.core.exception.CustomException;
 import com.example.orderservice.entity.OrdersItem;
 import com.example.orderservice.entity.WishListItem;
-import com.example.orderservice.repository.OrdersItemRepository;
 import com.example.orderservice.repository.OrdersRepository;
 import com.example.orderservice.entity.Orders;
 import com.example.orderservice.entity.OrdersStatus;
 import com.example.orderservice.repository.WishListRepository;
-import feign.FeignException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import io.github.resilience4j.retry.annotation.Retry;
-import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 
@@ -32,7 +28,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Service
 public class OrdersServiceImpl implements OrdersService {
-    private final OrdersItemRepository ordersItemRepository;
 
     private final OrdersRepository ordersRepository;
 
@@ -46,194 +41,115 @@ public class OrdersServiceImpl implements OrdersService {
 
     private final EncryptionUtil encryptionUtil;
 
-    private final RedisService redisService;
 
-
-    // 결제 진입 API
+    // 결제 진입 - order 생성
     @Override
-    public PaymentScreenResponseDto purchaseProduct(String email, PurchaseProductDto purchaseProductDto){
-
-        // 상품정보 조회
-        ProductResponseDto product = getProduct(purchaseProductDto.getProductId());
-
+    @Transactional
+    @CircuitBreaker(name = "userService", fallbackMethod = "memberServiceFallback1")
+    public OrdersResponseDto purchaseProductDirectly(String email, PurchaseProductDto purchaseProductDto){
+        Long productId = purchaseProductDto.getProductId();
         int count = purchaseProductDto.getCount();
+        Long addressId = purchaseProductDto.getAddressId();
 
-        // 수량체크
-        if(product.getProductStock() < count){
+        // 상품 정보 조회
+        ProductResponseDto product = getProduct(productId);
+
+        int productStock = getProductStock(productId);
+
+        // 재고확인
+        if (productStock < count) {
             throw new CustomException("상품 재고가 부족합니다: " + product.getProductName());
         }
+
+        // 배송지 정보 가지고 오기
+        AddressResponseDto address;
+        if(addressId != null){
+            address = memberServiceClient.getAddressById(addressId).orElseThrow(() -> new CustomException("선택한 배송지를 찾을 수 없습니다."));;
+        }else{
+            address = memberServiceClient.getDefaultAddress(email) .orElseThrow(() -> new CustomException("기본 배송지가 설정되어 있지 않습니다."));
+        }
+
+        // 주문 생성
+        Orders orders = Orders.builder()
+                .orderStatus(OrdersStatus.PAYMENT_IN_PROGRESS)
+                .memberEmail(email)
+                .address(address.getAddress())
+                .detailAdr(address.getDetailAdr())
+                .phone(address.getPhone())
+                .build();
+
+        // 주문 항목 추가
+        OrdersItem ordersItem = OrdersItem.builder()
+                .productId(product.getProductId())
+                .orders(orders)
+                .count(count)
+                .productPrice(product.getProductPrice() * count)
+                .productName(product.getProductName())
+                .build();
+
+        // 주문 항목 리스트에 추가
+        List<OrdersItem> ordersItems = new ArrayList<>();
+        ordersItems.add(ordersItem);
+
+        // 주문에 아이템 추가 및 총 가격 설정
+        orders.changeOrderItem(ordersItems);
+        orders.changeTotalPrice(ordersItem.getProductPrice());
+
+        // 주문 저장
+        ordersRepository.save(orders);
 
         // 재고 감소 요청
         productServiceClient.decreaseStock(product.getProductId(), count);
 
-        // 랜덤한 orderSignature 생성
-        String orderSignature = email+":"+UUID.randomUUID().toString();
-
-
-        try {
-            // 배송지 정보 가지고 오기
-            AddressResponseDto address = getAddress(purchaseProductDto.getAddressId(), email);
-
-            // 주소 정보 복호화
-            String decodedAddress = encryptionUtil.decrypt(address.getAddress());
-            String decodedDetailAdr = encryptionUtil.decrypt(address.getDetailAdr());
-            String decodedPhone = encryptionUtil.decrypt(address.getPhone());
-
-            // 복호화된 주소 정보를 새로운 AddressResponseDto에 저장
-            AddressResponseDto decryptedAddress = new AddressResponseDto(
-                    address.getAddressName(),
-                    decodedAddress,
-                    decodedDetailAdr,
-                    decodedPhone
-            );
-
-            PaymentScreenResponseDto paymentScreenResponseDto = new PaymentScreenResponseDto(
-                    orderSignature,
-                    new ProductResponseDto(
-                            product.getProductId(),
-                            product.getProductName(),
-                            product.getProductPrice(),
-                            product.getProductStock(),
-                            count
-                    ),
-                    decryptedAddress,
-                    product.getProductPrice() * count
-            );
-            // 결제 정보 redis에 저장 - 30분
-            redisService.saveOrderInfo(paymentScreenResponseDto);
-
-            // 결제 화면에서 보여줄 정보 반환
-            return paymentScreenResponseDto;
-
-        }catch (Exception e){
-            // 결제 실패 시 재고 복구
-            productServiceClient.increaseStock(product.getProductId(), count);
-
-            throw new CustomException("결제 완료에 실패했습니다. 다시 시도해 주세요.");
-        }
+        // 9. 생성된 주문 반환
+        return new OrdersResponseDto(
+                orders.getId(),
+                orders.getCreateAt(),
+                orders.getOrderStatus().getDesc(),
+                orders.getTotalPrice()
+        );
     }
 
-    //결제 API
-    //결제 시도
+    // 결제 진행
     @Override
     @Transactional
-    @CircuitBreaker(name = "productService", fallbackMethod = "productServicePaymentsFallback1")
-    @Retry(name = "productService", fallbackMethod = "productServicePaymentsFallback1")
-    public OrderSuccess attemptPaymentForProduct(String email, String orderSignature) {
-        //redis에 저장된 결제 정보 조회
-        PaymentScreenResponseDto paymentScreenData = redisService.getPurchaseProduct(orderSignature);
+    public OrdersSuccessDetails processPayment(Long orderId){
+        Orders orders = ordersRepository.findById(orderId)
+                .orElseThrow(() -> new CustomException("주문을 찾을 수 없습니다."));
 
-
-        if (paymentScreenData == null || !paymentScreenData.getOrderSignature().equals(orderSignature)) {
-            throw new CustomException("결제 시도 정보가 유효하지 않습니다.");
+        if (orders.getOrderStatus() != OrdersStatus.PAYMENT_IN_PROGRESS) {
+            throw new CustomException("결제할 수 없는 상태입니다.");
         }
 
-        // 결제 시도 정보가 유효하면 진행
-        try {
-            Long productId = paymentScreenData.getProduct().getProductId();
-            int count = paymentScreenData.getProduct().getProductCount();
+        // 20% 확률로 결제 실패 시뮬레이션
+        //boolean paymentSuccess = new Random().nextInt(100) >= 20;
 
-            // 수량체크 - 재고확인
-            ProductResponseDto product = getProduct(productId);
-//            if (product.getProductStock() < count) {
-//                throw new CustomException("결제 시점에 재고가 부족합니다: " + product.getProductName());
-//            }
-            // 주문 생성
-            Orders orders = Orders.builder()
-                    .orderStatus(OrdersStatus.ACCEPTED) // 초기 상태
-                    .memberEmail(email)
-                    .address(encryptionUtil.encrypt(paymentScreenData.getAddress().getAddress()))
-                    .detailAdr(encryptionUtil.encrypt(paymentScreenData.getAddress().getDetailAdr()))
-                    .phone(encryptionUtil.encrypt(paymentScreenData.getAddress().getPhone()))
-                    .build();
-
-            OrdersItem ordersItem = OrdersItem.builder()
-                    .productId(productId)
-                    .orders(orders)
-                    .count(count)
-                    .productPrice(product.getProductPrice() * count)
-                    .productName(product.getProductName())
-                    .build();
-
-            orders.changeOrderItem(Collections.singletonList(ordersItem));
-            orders.changeTotalPrice(ordersItem.getProductPrice());
-
-
-            // 결제 완료 후 Redis에서 정보 삭제
-            redisService.deletePurchaseProduct(orderSignature);
-
-
-            // 결제 완료 처리
-            return completePaymentForProduct(orders, paymentScreenData);
-        } catch (Exception e) {
-            log.error("결제 시도 중 오류 발생: {}", e.getMessage());
-
-            // 주문 상태를 ACCEPTED_FAILED로 업데이트
-            Orders orders = ordersRepository.findByMemberEmailAndOrderStatus(email, OrdersStatus.ACCEPTED)
-                    .orElseThrow(() -> new CustomException("주문을 찾을 수 없습니다."));
-            orders.changeOrderStatus(OrdersStatus.ACCEPTED_FAILED);
+        //if (paymentSuccess) {
+            orders.changeOrderStatus(OrdersStatus.ACCEPTED);
             ordersRepository.save(orders);
+            log.info("결제 성공: 주문 ID = {}", orderId);
+        //} else {
+            //throw new CustomException("결제가 실패했습니다. 다시 시도해 주세요.");
+        //}
 
-            throw new CustomException("결제 시도에 실패했습니다. 다시 시도해 주세요.");
-
-        }
-    }
-
-
-    // 결제 완료
-    @Transactional
-    @CircuitBreaker(name = "productService", fallbackMethod = "productServicePaymentsFallback2")
-    @Retry(name = "productService", fallbackMethod = "productServicePaymentsFallback2")
-    @TimeLimiter(name = "productService")
-    public OrderSuccess completePaymentForProduct(Orders orders, PaymentScreenResponseDto paymentScreenData) {
-
-        // 선택한 상품 정보 조회
-        ProductResponseDto product = paymentScreenData.getProduct();
-        int count =paymentScreenData.getProduct().getProductCount();
-
-        try {
-            // 주문에 아이템 추가 및 총 가격 설정
-            orders.changeOrderStatus(OrdersStatus.ACCEPTED); // 결제 완료 상태
-            orders.changeTotalPrice(product.getProductPrice() * count);
-
-
-            // 주문 저장
-            ordersRepository.save(orders);
-
-            // 주문 완료된 정보 반환
-            return
-                    new OrderSuccess(
-                            orders.getId(),
-                            orders.getCreateAt(),
-                            orders.getOrderStatus().getDesc()
-                    );
-
-        }catch (Exception e){
-            orders.changeOrderStatus(OrdersStatus.ACCEPTED_FAILED);
-            ordersRepository.save(orders);
-            // 결제 실패 시 재고 복구
-            productServiceClient.increaseStock(product.getProductId(), count);
-
-            throw new CustomException("결제 완료에 실패했습니다. 다시 시도해 주세요.");
-        }
-    }
-
-
-
-    @Override
-    public List<OrdersResponseDto> getOrderList(String email){
-
-        // 조회한 회원 ID를 사용하여 주문 목록 조회
-        List<Orders> ordersList = ordersRepository.findByMemberEmail(email);
-
-        return ordersList.stream()
-                .map(order -> new OrdersResponseDto(
-                        order.getId(),
-                        order.getTotalPrice(),
-                        order.getOrderStatus().getDesc(),
-                        order.getCreateAt()
-                ))
-                .collect(Collectors.toList());
+        return new OrdersSuccessDetails(
+                orders.getId(),
+                orders.getOrderStatus().getDesc(),
+                orders.getCreateAt(),
+                orders.getOrdersItems().stream().map(
+                        item -> new ProductResponseDto(
+                                item.getProductId(),
+                                item.getProductName(),
+                                item.getProductPrice(),
+                                item.getCount()
+                        )).collect(Collectors.toList()),
+                new AddressResponseDto(
+                        encryptionUtil.decrypt(orders.getAddress()),
+                        encryptionUtil.decrypt(orders.getDetailAdr()),
+                        encryptionUtil.decrypt(orders.getPhone())
+                ),
+                orders.getTotalPrice()
+        );
     }
 
     @Override
@@ -243,51 +159,49 @@ public class OrdersServiceImpl implements OrdersService {
                 () -> new CustomException("주문이 없습니다.")
         );
 
-        // OrdersItem 클래스가 productId를 가지고 있다고 가정합니다.
-        List<OrdersItem> ordersItems = ordersItemRepository.findByOrdersId(orderId);
-
-        // 각 OrdersItem에서 productId를 추출하고, 해당 ID로 ProductResponseDto를 가져옵니다.
-        List<ProductResponseDto> products = ordersItems.stream()
-                .map(item -> new ProductResponseDto(
-                        item.getProductId(),
-                        item.getProductName(),
-                        item.getProductPrice(),
-                        getProduct(item.getProductId()).getProductStock(),
-                        item.getCount()
-                ))
-                .collect(Collectors.toList());
-
-
-        AddressResponseDto address = getAddress(orders.getAddressId(),email);
-
-        // 주소 정보 복호화
-        String decodedAddress = encryptionUtil.decrypt(address.getAddress());
-        String decodedDetailAdr = encryptionUtil.decrypt(address.getDetailAdr());
-        String decodedPhone = encryptionUtil.decrypt(address.getPhone());
-
-        // 복호화된 주소 정보를 새로운 AddressResponseDto에 저장
-        AddressResponseDto decryptedAddress = new AddressResponseDto(
-                address.getAddressName(),
-                decodedAddress,
-                decodedDetailAdr,
-                decodedPhone
+        return new OrdersSuccessDetails(
+                orders.getId(),
+                orders.getOrderStatus().getDesc(),
+                orders.getCreateAt(),
+                orders.getOrdersItems().stream().map(
+                        item -> new ProductResponseDto(
+                                item.getProductId(),
+                                item.getProductName(),
+                                item.getProductPrice(),
+                                item.getCount()
+                        )).collect(Collectors.toList()),
+                new AddressResponseDto(
+                        encryptionUtil.decrypt(orders.getAddress()),
+                        encryptionUtil.decrypt(orders.getDetailAdr()),
+                        encryptionUtil.decrypt(orders.getPhone())
+                ),
+                orders.getTotalPrice()
         );
-
-        return
-                new OrdersSuccessDetails(
-                        orders.getId(),
-                        orders.getOrderStatus().getDesc(),
-                        orders.getCreateAt(),
-                        products,
-                        decryptedAddress,
-                        orders.getTotalPrice()
-                );
     }
+
+
+    @Override
+    public List<OrdersResponseDto> getOrderList(String email){
+
+        // 조회한 회원 ID를 사용하여 주문 목록 조회
+        List<Orders> ordersList = ordersRepository.findByMemberEmail(email);
+
+        return ordersList.stream()
+            .map(order -> new OrdersResponseDto(
+                    order.getId(),
+                    order.getCreateAt(),
+                    order.getOrderStatus().getDesc(),
+                    order.getTotalPrice()
+            ))
+            .collect(Collectors.toList());
+    }
+
 
     // 주문
     @Transactional
     @Override
-    public List<OrdersResponseDto> addOrders(String email,Long addressId){
+    @CircuitBreaker(name = "userService", fallbackMethod = "memberServiceFallback")
+    public OrdersResponseDto addOrders(String email,Long addressId){
 
         // wishList 조회
         Long wishListId = wishListRepository.findByMemberEmail(email).get().getId();
@@ -299,14 +213,18 @@ public class OrdersServiceImpl implements OrdersService {
         }
 
         // 배송지 정보 가지고 오기
-        AddressResponseDto address = getAddress(addressId, email);
+        AddressResponseDto address;
+        if(addressId != null){
+            address = memberServiceClient.getAddressById(addressId).orElseThrow(() -> new CustomException("선택한 배송지를 찾을 수 없습니다."));;
+        }else{
+            address = memberServiceClient.getDefaultAddress(email) .orElseThrow(() -> new CustomException("기본 배송지가 설정되어 있지 않습니다."));
+        }
 
         // 주문생성
         // Order객체생성 - builder로
         Orders orders = Orders.builder()
                 .orderStatus(OrdersStatus.ACCEPTED) // 초기 ACCEPTED
                 .memberEmail(email)
-                .addressId(addressId)
                 .address(address.getAddress())
                 .detailAdr(address.getDetailAdr())
                 .phone(address.getPhone())
@@ -324,7 +242,7 @@ public class OrdersServiceImpl implements OrdersService {
             ProductResponseDto product = getProduct(wishListItem.getProductId());
 
             // 재고 확인
-            if (product.getProductStock() < wishListItem.getCount()) {
+            if (productServiceClient.getStock(product.getProductId()) < wishListItem.getCount()) {
                 throw new CustomException("상품 재고가 부족합니다: " + product.getProductName());
             }
             // OrdersItem 생성
@@ -332,7 +250,7 @@ public class OrdersServiceImpl implements OrdersService {
                     .productId(product.getProductId())
                     .orders(orders)
                     .count(wishListItem.getCount())
-                    .productPrice(product.getProductPrice())
+                    .productPrice(product.getProductPrice() * wishListItem.getCount())
                     .productName(product.getProductName())
                     .build();
 
@@ -356,7 +274,12 @@ public class OrdersServiceImpl implements OrdersService {
         wishListService.deleteId(wishListId);
 
         // 업데이트된 주문 목록 반환
-        return getOrderList(email);
+        return new OrdersResponseDto(
+                orders.getId(),
+                orders.getCreateAt(),
+                orders.getOrderStatus().getDesc(),
+                orders.getTotalPrice()
+        );
     }
 
 
@@ -364,8 +287,6 @@ public class OrdersServiceImpl implements OrdersService {
     @Transactional
     @Override
     @CircuitBreaker(name = "productService", fallbackMethod = "productServiceFallback")
-    @Retry(name = "productService", fallbackMethod = "productServiceFallback")
-    @TimeLimiter(name = "productService")
     public List<OrdersResponseDto> canceled(Long id, String email){
 
         Orders orders = ordersRepository.findById(id).orElseThrow();
@@ -411,54 +332,38 @@ public class OrdersServiceImpl implements OrdersService {
         }
     }
 
+
+    //@Cacheable(value = "product", key = "#productId")
     @CircuitBreaker(name = "productService", fallbackMethod = "productServiceFallback")
-    @Retry(name = "productService", fallbackMethod = "productServiceFallback")
-    @TimeLimiter(name = "productService")
     public ProductResponseDto getProduct(Long productId) {
-        try{
-            return productServiceClient.getProduct(productId);
-        }catch (FeignException e) {
-            log.error("Product not found for ID {}: {}", productId, e.getMessage());
-            throw new CustomException("해당 상품을 찾을 수 없습니다.");
-        }
-
+        return productServiceClient.getProduct(productId);
     }
 
-    @CircuitBreaker(name = "userService", fallbackMethod = "memberServiceFallback")
-    @Retry(name = "userService",  fallbackMethod = "memberServiceFallback")
-    @TimeLimiter(name = "userService")
-    public AddressResponseDto getAddress(Long addressId, String email) {
-        try{
-            if (addressId != null) {
-                return memberServiceClient.getAddressById(addressId)
-                        .orElseThrow(() -> new CustomException("선택한 배송지를 찾을 수 없습니다."));
-            } else {
-                return memberServiceClient.getDefaultAddress(email)
-                        .orElseThrow(() -> new CustomException("기본 배송지가 설정되어 있지 않습니다."));
-            }
-        }catch (FeignException e) {
-            throw new CustomException("기본 배송지를 찾을수 없습니다.");
-        }
+    @CircuitBreaker(name = "productService", fallbackMethod = "productServiceFallback1")
+    public int getProductStock(Long productId){
+        return productServiceClient.getStock(productId);
     }
 
-    public OrderSuccess productServicePaymentsFallback1(String email, String orderSignature, Throwable throwable) {
 
-        return new OrderSuccess();
-    }
-
-    public OrderSuccess productServicePaymentsFallback2(Orders orders, PaymentScreenResponseDto paymentScreenData, Throwable throwable) {
-
-        return new OrderSuccess();
-    }
-
-    public AddressResponseDto memberServiceFallback(Long addressId, String email, Throwable throwable) {
+    public List<OrdersResponseDto> memberServiceFallback(String email, Throwable throwable) {
         log.error("Member Service is down: {}", throwable.getMessage());
-        return new AddressResponseDto();
+        return Collections.emptyList();
     }
+
+    public OrdersResponseDto memberServiceFallback1(String email, PurchaseProductDto purchaseProductDto, Throwable throwable) {
+        log.error("Member Service is down: {}", throwable.getMessage());
+        return new OrdersResponseDto();
+    }
+
 
     public ProductResponseDto productServiceFallback(Long productId, Throwable throwable) {
         log.error("Product Service is down: {}", throwable.getMessage());
         return new ProductResponseDto();
+    }
+
+    public int productServiceFallback1(Long productId, Throwable throwable) {
+        log.error("Product Service is down: {}", throwable.getMessage());
+        return 0;
     }
 
 

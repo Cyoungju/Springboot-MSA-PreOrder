@@ -7,10 +7,16 @@ import com.example.productservice.dto.ProductDto;
 import com.example.productservice.entity.ProductStatus;
 import com.example.productservice.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 
 @Transactional(readOnly = true) // 읽기 전용
@@ -18,7 +24,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class ProductServiceImpl implements ProductService {
 
+    private final RedisTemplate<String, Integer> redisTemplate;
+
+
     private final ProductRepository productRepository;
+
+    @Value("${cache.product.stock.prefix:product:stock:}")
+    private String stockCachePrefix;
 
     @Override
     public Page<ProductDto> findAll(Pageable pageable) {
@@ -72,21 +84,96 @@ public class ProductServiceImpl implements ProductService {
 
     // 제품 재고 감소
     @Override
-    @Transactional
     public void decreaseStock(Long productId, int count) {
-        Product product = productRepository.findById(productId).orElseThrow(() -> new RuntimeException("제품을 찾을 수 없습니다."));
-        if (product.getStock() < count) {
+        String redisKey = stockCachePrefix + productId;
+
+        // Redis에서 현재 재고 조회
+        Integer currentStock = redisTemplate.opsForValue().get(redisKey);
+
+        if (currentStock == null) {
+            // Redis에 재고가 없으면 데이터베이스에서 조회 후 Redis에 캐시
+            Product product = productRepository.findById(productId)
+                    .orElseThrow(() -> new RuntimeException("제품을 찾을 수 없습니다."));
+            currentStock = product.getStock();
+            redisTemplate.opsForValue().set(redisKey, currentStock);
+        }
+
+        if (currentStock < count) {
             throw new RuntimeException("재고가 부족합니다.");
         }
-        product.decreaseStock(count);
-        productRepository.save(product);
+
+        // Redis에서 재고 감소
+        redisTemplate.opsForValue().set(redisKey, currentStock - count);
+
+        // 비동기적으로 데이터베이스에서 재고 감소
+        asyncBatchUpdateStock(productId, count);
     }
+
+    // 데이터베이스에서 재고 감소
+    @Async
+    public void asyncBatchUpdateStock(Long productId, int count) {
+        updateStockBatch(productId, count);
+    }
+    @Transactional
+    public void updateStockBatch(Long productId, int count) {
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("제품을 찾을 수 없습니다. 제품 ID: " + productId));
+
+        // 재고 감소
+        int newStock = product.getStock() - count;
+        if (newStock < 0) {
+            throw new RuntimeException("재고가 부족합니다. 제품 ID: " + productId);
+        }
+        product.getStock(newStock);
+
+        productRepository.save(product);
+
+    }
+
 
     @Override
     @Transactional
     public void increaseStock(Long productId, int count) {
-        Product product = productRepository.findById(productId).orElseThrow(() -> new RuntimeException("제품을 찾을 수 없습니다."));
-        product.increaseStock(count);
+        String redisKey = stockCachePrefix + productId;
+
+        // Redis에서 현재 재고 조회
+        Integer currentStock = redisTemplate.opsForValue().get(redisKey);
+
+        if (currentStock == null) {
+            // Redis에 재고가 없으면 데이터베이스에서 조회 후 Redis에 캐시
+            Product product = productRepository.findById(productId)
+                    .orElseThrow(() -> new RuntimeException("제품을 찾을 수 없습니다."));
+            currentStock = product.getStock();
+            redisTemplate.opsForValue().set(redisKey, currentStock);
+        }
+
+        // 데이터베이스에서 재고 증가
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("제품을 찾을 수 없습니다."));
+        product.getStock(product.getStock() + count);
         productRepository.save(product);
+
+        // Redis에서 재고 증가
+        redisTemplate.opsForValue().set(redisKey, currentStock + count);
+    }
+
+    @Override
+    public int getStock(Long productId){
+        String redisKey = stockCachePrefix + productId;
+
+        // 레디스에서 정보 조회
+        Integer stock = redisTemplate.opsForValue().get(redisKey);
+
+
+        if(stock == null){
+            // 레디스에 재고 정보 캐싱
+            Product product = productRepository.findById(productId).orElseThrow(() -> new RuntimeException("제품을 찾을 수 없습니다."));
+            stock = product.getStock();
+
+            // 레디스에 재고 정보 캐싱 (키값, 재고)
+            redisTemplate.opsForValue().set(redisKey,stock);
+        }
+        return stock;
     }
 }

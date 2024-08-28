@@ -17,23 +17,18 @@ public class OrdersController {
 
     private final OrdersService ordersService;
 
-    // 결제 진입
     @PostMapping("/purchase")
-    public ResponseEntity<?> purchaseProduct(
-            @RequestHeader("X-Authenticated-User") String email,
-            @RequestBody PurchaseProductDto purchaseProductDto){
-
-        PaymentScreenResponseDto response = ordersService.purchaseProduct(email, purchaseProductDto);
-        return  ResponseEntity.ok(response);
+    public ResponseEntity<?> purchase(@RequestHeader("X-Authenticated-User") String email, @RequestBody PurchaseProductDto purchaseProductDto){
+        OrdersResponseDto ordersResponseDto = ordersService.purchaseProductDirectly(email, purchaseProductDto);
+        ApiUtils.ApiResult<?> apiResult = ApiUtils.success(ordersResponseDto);
+        return ResponseEntity.ok(apiResult);
     }
 
-    // 결제
-    @PostMapping("/attempt-payment")
-    public ResponseEntity<OrderSuccess> attemptPaymentForProduct(
-            @RequestHeader("X-Authenticated-User") String email,
-            @RequestHeader("X-Order-Signature") String orderSignature) {
-        OrderSuccess response = ordersService.attemptPaymentForProduct(email, orderSignature);
-        return ResponseEntity.ok(response);
+    @PostMapping("/payment/{orderId}")
+    public ResponseEntity<?> payment(@PathVariable Long orderId){
+        OrdersSuccessDetails ordersResponseDto = ordersService.processPayment(orderId);
+        ApiUtils.ApiResult<?> apiResult = ApiUtils.success(ordersResponseDto);
+        return ResponseEntity.ok(apiResult);
     }
 
     @GetMapping("/{id}")
@@ -42,6 +37,8 @@ public class OrdersController {
         return ResponseEntity.ok(response);
 
     }
+
+
 
     @GetMapping
     public ResponseEntity<?> getList(@RequestHeader("X-Authenticated-User") String email){
@@ -53,7 +50,7 @@ public class OrdersController {
     @PostMapping
     public ResponseEntity<?> addOrder(@RequestHeader("X-Authenticated-User") String email, Long addressId){
 
-        List<OrdersResponseDto> ordersResponseDto = ordersService.addOrders(email, addressId);
+        OrdersResponseDto ordersResponseDto = ordersService.addOrders(email, addressId);
 
         ApiUtils.ApiResult<?> apiResult = ApiUtils.success(ordersResponseDto);
         return ResponseEntity.ok(apiResult);
