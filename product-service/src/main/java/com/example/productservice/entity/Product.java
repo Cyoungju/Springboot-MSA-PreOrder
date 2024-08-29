@@ -5,10 +5,12 @@ import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @NoArgsConstructor
 @Getter
 @Entity
+@Setter
 @Table(name = "product")
 public class Product extends BaseTimeEntity {
 
@@ -47,16 +49,25 @@ public class Product extends BaseTimeEntity {
         this.productStatus = productStatus;
     }
 
-    public void getStock(int count){
+    public static Product create(int quantity) {
+        Product entity = new Product();
+        entity.setStock(quantity);
+        entity.setName("이름");
+        entity.setProductStatus(ProductStatus.AVAILABLE);
+        entity.setPrice(10000L);
+        return entity;
+    }
+
+    public void setStock(int count){
         this.stock = count;
     }
 
-//    public void increaseStock(int count) {
-//        this.stock += count;
-//    }
-//
-//    public void decreaseStock(int count) {
-//        int s = this.stock - count;
-//        this.stock = Math.max(s, 0);
-//    }
+    public void increaseStock(int count) {
+        this.stock += count;
+    }
+
+    public void decreaseStock(int count) {
+        int s = this.stock - count;
+        this.stock = Math.max(s, 0);
+    }
 }

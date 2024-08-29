@@ -28,6 +28,11 @@ public class ProductControllerClient {
     public void decreaseStock(@PathVariable("id") Long productId, @RequestParam("count") int count) {
         productService.decreaseStock(productId, count);
     }
+    @PostMapping("/products/{id}/decrease-stock/db")
+    public void asyncBatchUpdateStock(@PathVariable("id") Long productId, @RequestParam("count") int count) {
+        productService.asyncBatchUpdateStock(productId, count);
+    }
+
 
     // 재고 증가
     @PostMapping("/products/{id}/increase-stock")
