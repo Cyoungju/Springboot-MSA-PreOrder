@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 
@@ -55,6 +56,8 @@ public class OrdersServiceImpl implements OrdersService {
         ProductResponseDto product = getProduct(productId);
 
         int productStock = getProductStock(productId);
+
+        System.out.println(productStock + " 재고확인");
 
         // 재고확인
         if (productStock < count) {
@@ -127,7 +130,16 @@ public class OrdersServiceImpl implements OrdersService {
         //if (paymentSuccess) {
             orders.changeOrderStatus(OrdersStatus.ACCEPTED);
             ordersRepository.save(orders);
+            // 비동기 재고 업데이트 호출
+            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                for (OrdersItem item : orders.getOrdersItems()) {
+                    productServiceClient.asyncBatchUpdateStock(item.getProductId(), item.getCount());
+                }
+            });
             log.info("결제 성공: 주문 ID = {}", orderId);
+
+            // 비동기 작업이 완료될 때까지 기다리거나 상태를 확인
+            future.join();
         //} else {
             //throw new CustomException("결제가 실패했습니다. 다시 시도해 주세요.");
         //}
@@ -346,7 +358,7 @@ public class OrdersServiceImpl implements OrdersService {
 
 
     public List<OrdersResponseDto> memberServiceFallback(String email, Throwable throwable) {
-        log.error("Member Service is down: {}", throwable.getMessage());
+        log.error("Product Service is down: {}", throwable.getMessage());
         return Collections.emptyList();
     }
 

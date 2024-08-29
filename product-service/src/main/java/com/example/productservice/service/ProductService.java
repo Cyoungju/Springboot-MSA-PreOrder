@@ -21,6 +21,9 @@ public interface ProductService {
     // 재고 감소
     void decreaseStock(Long productId, int count);
 
+    void asyncBatchUpdateStock(Long productId, int count);
+
+//    void redissonDecreaseStock(Long productId, int count);
     void increaseStock(Long productId, int count);
 
     int getStock(Long productId);
