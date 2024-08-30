@@ -12,11 +12,15 @@ import com.example.orderservice.entity.Orders;
 import com.example.orderservice.entity.OrdersStatus;
 import com.example.orderservice.repository.WishListRepository;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -36,8 +40,6 @@ public class OrdersServiceImpl implements OrdersService {
 
     private final WishListRepository wishListRepository;
 
-    private final MemberServiceClient memberServiceClient;
-
     private final ProductServiceClient productServiceClient;
 
     private final EncryptionUtil encryptionUtil;
@@ -52,17 +54,15 @@ public class OrdersServiceImpl implements OrdersService {
         AddressResponseDto address = purchaseProductDto.getAddress();
 
         // 상품 정보 조회
-        ProductResponseDto product = getProduct(productId);
+        ProductResponseDto product = checkProduct(productId);
 
-        int productStock = getProductStock(productId);
+        // 구매 가능 시간 검증
+        validatePurchaseTime(product);
 
+        // 상품 수량 조회 - 재고확인
+        checkStock(productId, count, product.getProductName());
 
-        // 재고확인
-        if (productStock < count) {
-            throw new CustomException("상품 재고가 부족합니다: " + product.getProductName());
-        }
-
-        // 주문 생성
+        // 주문 생성 - 재고가 있을 경우에만 주문생성
         Orders orders = Orders.builder()
                 .orderStatus(OrdersStatus.PAYMENT_IN_PROGRESS)
                 .memberEmail(email)
@@ -104,6 +104,35 @@ public class OrdersServiceImpl implements OrdersService {
         );
     }
 
+    // 시간 검증
+    private void validatePurchaseTime(ProductResponseDto product) {
+        LocalTime now = LocalTime.now();
+        if (product.getAvailableFrom() != null && now.isBefore(product.getAvailableFrom())) {
+            throw new CustomException("해당 상품은 " + product.getAvailableFrom() + " 이후에 구매 가능합니다.");
+        }
+    }
+
+
+    // 수량체크 메소드
+    private void checkStock(Long productId, int count, String productName){
+        int productStock = getProductStock(productId);
+        if (productStock < count) {
+            throw new CustomException("상품 재고가 부족합니다: " + productName);
+        }
+    }
+
+
+    private ProductResponseDto checkProduct(Long productId){
+        try {
+            ProductResponseDto product = getProduct(productId);
+            return product;
+
+        }catch (Exception e){
+            throw new CustomException("해당 상품을 찾을수 없습니다.");
+
+        }
+    }
+
     // 결제 진행
     @Override
     @Transactional
@@ -116,9 +145,9 @@ public class OrdersServiceImpl implements OrdersService {
         }
 
         // 20% 확률로 결제 실패 시뮬레이션
-        //boolean paymentSuccess = new Random().nextInt(100) >= 20;
+        boolean paymentSuccess = new Random().nextInt(100) >= 20;
 
-        //if (paymentSuccess) {
+        if (paymentSuccess) {
             orders.changeOrderStatus(OrdersStatus.ACCEPTED);
             ordersRepository.save(orders);
             // 비동기 재고 업데이트 호출
@@ -131,9 +160,9 @@ public class OrdersServiceImpl implements OrdersService {
 
             // 비동기 작업이 완료될 때까지 기다리거나 상태를 확인
             future.join();
-        //} else {
-            //throw new CustomException("결제가 실패했습니다. 다시 시도해 주세요.");
-        //}
+        } else {
+            throw new CustomException("결제가 실패했습니다. 다시 시도해 주세요.");
+        }
 
         return new OrdersSuccessDetails(
                 orders.getId(),
@@ -144,7 +173,8 @@ public class OrdersServiceImpl implements OrdersService {
                                 item.getProductId(),
                                 item.getProductName(),
                                 item.getProductPrice(),
-                                item.getCount()
+                                item.getCount(),
+                                null
                         )).collect(Collectors.toList()),
                 new AddressResponseDto(
                         orders.getAddressName(),
@@ -156,6 +186,7 @@ public class OrdersServiceImpl implements OrdersService {
         );
     }
 
+    // 주문 상세
     @Override
     public OrdersSuccessDetails getOrderDetail(String email, Long orderId){
 
@@ -172,7 +203,8 @@ public class OrdersServiceImpl implements OrdersService {
                                 item.getProductId(),
                                 item.getProductName(),
                                 item.getProductPrice(),
-                                item.getCount()
+                                item.getCount(),
+                                null
                         )).collect(Collectors.toList()),
                 new AddressResponseDto(
                         orders.getAddressName(),
@@ -185,6 +217,7 @@ public class OrdersServiceImpl implements OrdersService {
     }
 
 
+    // 주문 목록
     @Override
     public List<OrdersResponseDto> getOrderList(String email){
 
@@ -202,11 +235,10 @@ public class OrdersServiceImpl implements OrdersService {
     }
 
 
-    // 주문
+    // 주문 - 장바구니 상품
     @Transactional
     @Override
-    @CircuitBreaker(name = "userService", fallbackMethod = "memberServiceFallback")
-    public OrdersResponseDto addOrders(String email,Long addressId){
+    public OrdersResponseDto addOrders(String email, AddressResponseDto address){
 
         // wishList 조회
         Long wishListId = wishListRepository.findByMemberEmail(email).get().getId();
@@ -217,22 +249,14 @@ public class OrdersServiceImpl implements OrdersService {
             throw new CustomException("장바구니가 비어있습니다.");
         }
 
-        // 배송지 정보 가지고 오기
-        AddressResponseDto address;
-        if(addressId != null){
-            address = memberServiceClient.getAddressById(addressId).orElseThrow(() -> new CustomException("선택한 배송지를 찾을 수 없습니다."));;
-        }else{
-            address = memberServiceClient.getDefaultAddress(email) .orElseThrow(() -> new CustomException("기본 배송지가 설정되어 있지 않습니다."));
-        }
-
-        // 주문생성
-        // Order객체생성 - builder로
+        // 주문 생성
         Orders orders = Orders.builder()
-                .orderStatus(OrdersStatus.ACCEPTED) // 초기 ACCEPTED
+                .orderStatus(OrdersStatus.PAYMENT_IN_PROGRESS)
                 .memberEmail(email)
-                .address(address.getAddress())
-                .detailAdr(address.getDetailAdr())
-                .phone(address.getPhone())
+                .addressName(address.getAddressName())
+                .address(encryptionUtil.encrypt(address.getAddress()))
+                .detailAdr(encryptionUtil.encrypt(address.getDetailAdr()))
+                .phone(encryptionUtil.encrypt(address.getPhone()))
                 .build();
 
         // orderItem 에저장
@@ -244,19 +268,21 @@ public class OrdersServiceImpl implements OrdersService {
 
         for (WishListItem wishListItem : wishListItems) {
             // ProductService에서 제품 정보 조회
-            ProductResponseDto product = getProduct(wishListItem.getProductId());
+            ProductResponseDto product = checkProduct(wishListItem.getProductId());
 
-            // 재고 확인
-            if (productServiceClient.getStock(product.getProductId()) < wishListItem.getCount()) {
-                throw new CustomException("상품 재고가 부족합니다: " + product.getProductName());
-            }
+            // 구매 가능 시간 검증
+            validatePurchaseTime(product);
+
+            // 수량 체크
+            checkStock(wishListItem.getProductId(), wishListItem.getCount(), wishListItem.getProductName());
+            
             // OrdersItem 생성
             OrdersItem ordersItem = OrdersItem.builder()
                     .productId(product.getProductId())
-                    .orders(orders)
-                    .count(wishListItem.getCount())
-                    .productPrice(product.getProductPrice() * wishListItem.getCount())
                     .productName(product.getProductName())
+                    .productPrice(product.getProductPrice() * wishListItem.getCount())
+                    .count(wishListItem.getCount())
+                    .orders(orders)
                     .build();
 
             ordersItems.add(ordersItem);
@@ -291,7 +317,9 @@ public class OrdersServiceImpl implements OrdersService {
     // 주문 취소
     @Transactional
     @Override
-    @CircuitBreaker(name = "productService", fallbackMethod = "productServiceFallback")
+    @CircuitBreaker(name = "productService", fallbackMethod = "productServiceFallback2")
+    @Retry(name = "productService",  fallbackMethod = "productServiceFallback2")
+    //@TimeLimiter(name = "productService")
     public List<OrdersResponseDto> canceled(Long id, String email){
 
         Orders orders = ordersRepository.findById(id).orElseThrow();
@@ -302,7 +330,7 @@ public class OrdersServiceImpl implements OrdersService {
             for (OrdersItem item : orders.getOrdersItems()) {
                 ProductResponseDto product = getProduct(item.getProductId());
 
-                // 수량 증가 - 저장 까지
+                // 수량 증가 - redis / DB에 stock 저장
                 productServiceClient.increaseStock(product.getProductId(), item.getCount());
             }
             ordersRepository.save(orders);
@@ -338,37 +366,39 @@ public class OrdersServiceImpl implements OrdersService {
     }
 
 
-    //@Cacheable(value = "product", key = "#productId")
+    // 상품 조회
     @CircuitBreaker(name = "productService", fallbackMethod = "productServiceFallback")
+    @Retry(name = "productService",  fallbackMethod = "productServiceFallback")
+    //@TimeLimiter(name = "productService")
     public ProductResponseDto getProduct(Long productId) {
         return productServiceClient.getProduct(productId);
     }
 
+    // 상품 수량 조회
     @CircuitBreaker(name = "productService", fallbackMethod = "productServiceFallback1")
+    @Retry(name = "productService",  fallbackMethod = "productServiceFallback1")
+    //@TimeLimiter(name = "productService")
     public int getProductStock(Long productId){
         return productServiceClient.getStock(productId);
     }
 
 
-    public List<OrdersResponseDto> memberServiceFallback(String email, Throwable throwable) {
-        log.error("Product Service is down: {}", throwable.getMessage());
-        return Collections.emptyList();
-    }
-
-    public OrdersResponseDto memberServiceFallback1(String email, PurchaseProductDto purchaseProductDto, Throwable throwable) {
-        log.error("Member Service is down: {}", throwable.getMessage());
-        return new OrdersResponseDto();
-    }
-
-
+    // 상품 조회 - 예외처리 메소드
     public ProductResponseDto productServiceFallback(Long productId, Throwable throwable) {
         log.error("Product Service is down: {}", throwable.getMessage());
         return new ProductResponseDto();
     }
 
+    // 상품 수량 조회 - 예외처리 메소드
     public int productServiceFallback1(Long productId, Throwable throwable) {
         log.error("Product Service is down: {}", throwable.getMessage());
         return 0;
+    }
+
+    // 수량복구 - 예외처리 메소드
+    public List<OrdersResponseDto> productServiceFallback2(Long id, String email, Throwable throwable) {
+        log.error("Product Service is down: {}", throwable.getMessage());
+        return Collections.emptyList();
     }
 
 

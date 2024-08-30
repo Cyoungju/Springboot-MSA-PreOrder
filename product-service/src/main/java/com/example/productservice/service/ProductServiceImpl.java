@@ -17,6 +17,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalTime;
+
 
 @Transactional(readOnly = true) // 읽기 전용
 @RequiredArgsConstructor
@@ -47,7 +49,17 @@ public class ProductServiceImpl implements ProductService {
 
     private Page<ProductDto> findByStatusNot(Pageable pageable){
         Page<Product> products = productRepository.findByStatusNot(ProductStatus.DISCONTINUED, pageable);
-        return products.map(ProductDto::new);
+
+        return products.map(
+                item -> new ProductDto(
+                   item.getId(),
+                   item.getName(),
+                   item.getContent(),
+                   item.getPrice(),
+                   getStock(item.getId()),
+                   item.getProductStatus().getDesc()
+                ));
+
     }
 
     @Override
@@ -56,7 +68,14 @@ public class ProductServiceImpl implements ProductService {
                 () -> new CustomException("해당 상품을 찾을수 없습니다")
         );
 
-        return new ProductDto(product);
+        return new ProductDto(
+                product.getId(),
+                product.getName(),
+                product.getContent(),
+                product.getPrice(),
+                getStock(product.getId()),
+                product.getProductStatus().getDesc()
+        );
     }
 
     @Override
@@ -66,7 +85,7 @@ public class ProductServiceImpl implements ProductService {
         );
 
         if(product.getProductStatus() == ProductStatus.AVAILABLE){
-            return new ProductResponseDto(product.getId(), product.getName(), product.getPrice(), product.getStock());
+            return new ProductResponseDto(product.getId(), product.getName(), product.getPrice(), getStock(product.getId()), product.getAvailableFrom());
 
         }else {
             throw new CustomException("해당 상품은 현재 구매할수 없습니다.");
@@ -78,9 +97,10 @@ public class ProductServiceImpl implements ProductService {
         Product product = productRepository.findById(id).orElseThrow(
                 () -> new CustomException("해당 상품을 찾을수 없습니다.")
         );
-        return new ProductResponseDto(product.getId(), product.getName(), product.getPrice(), product.getStock());
+        return new ProductResponseDto(product.getId(), product.getName(), product.getPrice(), product.getStock(), product.getAvailableFrom());
     }
 
+    // 레디스에서만 재고 감소
     @Override
     public void decreaseStock(Long productId, int count) {
         String redisKey = PRODUCT_KEY_PREFIX + productId.toString();
@@ -122,7 +142,6 @@ public class ProductServiceImpl implements ProductService {
         updateStockBatch(productId, count);
     }
 
-
     @Transactional
     public void updateStockBatch(Long productId, int count) {
 
@@ -140,7 +159,8 @@ public class ProductServiceImpl implements ProductService {
 
     }
 
-
+    
+    // redis , DB에서 재고 증가
     @Override
     @Transactional
     public void increaseStock(Long productId, int count) {
@@ -167,6 +187,7 @@ public class ProductServiceImpl implements ProductService {
         redisTemplate.opsForValue().set(redisKey, currentStock + count);
     }
 
+    // 재고 조회
     @Override
     public int getStock(Long productId){
         String redisKey = PRODUCT_KEY_PREFIX + productId.toString();
@@ -183,8 +204,16 @@ public class ProductServiceImpl implements ProductService {
             // 레디스에 재고 정보 캐싱 (키값, 재고)
             redisTemplate.opsForValue().set(redisKey,stock);
         }
-        System.out.println(stock);
         return stock;
+    }
+
+    @Transactional
+    @Override
+    public void changeSaleTime(Long productId, LocalTime time){
+        Product product = productRepository.getReferenceById(productId);
+
+        product.changeSaleTime(time);
+        productRepository.save(product);
     }
 }
 

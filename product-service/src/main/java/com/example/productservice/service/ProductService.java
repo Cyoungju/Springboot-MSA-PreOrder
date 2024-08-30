@@ -8,6 +8,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalTime;
+
 @Service
 public interface ProductService {
     Page<ProductDto> findAll(Pageable pageable);
@@ -23,9 +25,10 @@ public interface ProductService {
 
     void asyncBatchUpdateStock(Long productId, int count);
 
-//    void redissonDecreaseStock(Long productId, int count);
     void increaseStock(Long productId, int count);
 
     int getStock(Long productId);
+
+    void changeSaleTime(Long productId, LocalTime time);
 
 }
