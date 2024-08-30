@@ -41,27 +41,27 @@ public class OrderTasklet implements Tasklet {
             for (Orders order : orderList) {
                 LocalDateTime createdAt = order.getCreateAt(); // 첫 주문 시간
                 LocalDateTime modifyAt = order.getModifyAt(); // 수정된 시간
+
                 Duration duration = Duration.between(createdAt, now);
                 Duration duration2 = Duration.between(modifyAt, now);
-                long daysElapsed = duration.toDays();
-                long daysElapsed2 = duration2.toDays();
-
-                long www = duration2.toMillis();
 
 
                 // 상태에 따라 업데이트
-                if(daysElapsed >= 1 && order.getOrderStatus().equals(OrdersStatus.ACCEPTED)){
+                if(duration.toDays() >= 1 && order.getOrderStatus().equals(OrdersStatus.ACCEPTED)){
                     order.changeOrderStatus(OrdersStatus.ON_DELIVERY);
                     log.info("1일 경과 ACCEPTED(결제완료) -> ON_DELIVERY(배달중) 상태 변경");
-                }else if(daysElapsed >= 2 && order.getOrderStatus().equals(OrdersStatus.ON_DELIVERY)){
+                }else if(duration.toDays() >= 2 && order.getOrderStatus().equals(OrdersStatus.ON_DELIVERY)){
                     order.changeOrderStatus(OrdersStatus.SHIPPED);
                     log.info("2일 경과 ON_DELIVERY(배달중) -> SHIPPED(배달완료) 상태 변경");
-                }else if(daysElapsed >= 3 && order.getOrderStatus().equals(OrdersStatus.SHIPPED)){
+                }else if(duration.toDays() >= 3 && order.getOrderStatus().equals(OrdersStatus.SHIPPED)){
                     order.changeOrderStatus(OrdersStatus.CONFIRMED);
                     log.info("3일 경과 SHIPPED(배달완료) -> CONFIRMED(확정) 상태 변경");
+                } else if (duration.toMinutes() >= 30 && duration2.toMillis() >= 30 && order.getOrderStatus().equals(OrdersStatus.PAYMENT_IN_PROGRESS)) {
+                    order.changeOrderStatus(OrdersStatus.ACCEPTED_FAILED);
+                    log.info("30분경과 경과 PAYMENT_IN_PROGRESS(결제진행중) -> ACCEPTED_FAILED(결제취소) 상태 변경");
                 }
 
-                if (www >= 1 && order.getOrderStatus().equals(OrdersStatus.RETURN_REQUESTED)) {
+                if (duration2.toDays() >= 1 && order.getOrderStatus().equals(OrdersStatus.RETURN_REQUESTED)) {
                     order.changeOrderStatus(OrdersStatus.RETURNED);
                     log.info("수정한 날로 1일경과 && RETURN_REQUESTED(반품진행중) -> RETURNED(반품 완료)");
 
@@ -73,6 +73,15 @@ public class OrderTasklet implements Tasklet {
                         productServiceClient.increaseStock(product.getProductId(), item.getCount());
                     }
 
+                }
+                if (duration.toDays() >= 7 && duration2.toDays() >= 7 && order.getOrderStatus().equals(OrdersStatus.ACCEPTED_FAILED)) {
+                    for (OrdersItem item : order.getOrdersItems()) {
+                        ProductResponseDto product = productServiceClient.getProduct(item.getProductId());
+
+                        // 수량 증가 - 저장 까지
+                        productServiceClient.increaseStock(product.getProductId(), item.getCount());
+
+                    }
                 }
 
                 // 상태 변경된 주문 저장
