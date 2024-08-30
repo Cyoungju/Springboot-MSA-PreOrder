@@ -46,39 +46,30 @@ public class OrdersServiceImpl implements OrdersService {
     // 결제 진입 - order 생성
     @Override
     @Transactional
-    @CircuitBreaker(name = "userService", fallbackMethod = "memberServiceFallback1")
     public OrdersResponseDto purchaseProductDirectly(String email, PurchaseProductDto purchaseProductDto){
         Long productId = purchaseProductDto.getProductId();
         int count = purchaseProductDto.getCount();
-        Long addressId = purchaseProductDto.getAddressId();
+        AddressResponseDto address = purchaseProductDto.getAddress();
 
         // 상품 정보 조회
         ProductResponseDto product = getProduct(productId);
 
         int productStock = getProductStock(productId);
 
-        System.out.println(productStock + " 재고확인");
 
         // 재고확인
         if (productStock < count) {
             throw new CustomException("상품 재고가 부족합니다: " + product.getProductName());
         }
 
-        // 배송지 정보 가지고 오기
-        AddressResponseDto address;
-        if(addressId != null){
-            address = memberServiceClient.getAddressById(addressId).orElseThrow(() -> new CustomException("선택한 배송지를 찾을 수 없습니다."));;
-        }else{
-            address = memberServiceClient.getDefaultAddress(email) .orElseThrow(() -> new CustomException("기본 배송지가 설정되어 있지 않습니다."));
-        }
-
         // 주문 생성
         Orders orders = Orders.builder()
                 .orderStatus(OrdersStatus.PAYMENT_IN_PROGRESS)
                 .memberEmail(email)
-                .address(address.getAddress())
-                .detailAdr(address.getDetailAdr())
-                .phone(address.getPhone())
+                .addressName(address.getAddressName())
+                .address(encryptionUtil.encrypt(address.getAddress()))
+                .detailAdr(encryptionUtil.encrypt(address.getDetailAdr()))
+                .phone(encryptionUtil.encrypt(address.getPhone()))
                 .build();
 
         // 주문 항목 추가
@@ -156,6 +147,7 @@ public class OrdersServiceImpl implements OrdersService {
                                 item.getCount()
                         )).collect(Collectors.toList()),
                 new AddressResponseDto(
+                        orders.getAddressName(),
                         encryptionUtil.decrypt(orders.getAddress()),
                         encryptionUtil.decrypt(orders.getDetailAdr()),
                         encryptionUtil.decrypt(orders.getPhone())
@@ -183,6 +175,7 @@ public class OrdersServiceImpl implements OrdersService {
                                 item.getCount()
                         )).collect(Collectors.toList()),
                 new AddressResponseDto(
+                        orders.getAddressName(),
                         encryptionUtil.decrypt(orders.getAddress()),
                         encryptionUtil.decrypt(orders.getDetailAdr()),
                         encryptionUtil.decrypt(orders.getPhone())

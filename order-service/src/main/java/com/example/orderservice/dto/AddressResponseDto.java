@@ -11,6 +11,8 @@ import lombok.Setter;
 @AllArgsConstructor
 public class AddressResponseDto {
 
+    private String addressName;
+
     private String address;
 
     private String detailAdr;
