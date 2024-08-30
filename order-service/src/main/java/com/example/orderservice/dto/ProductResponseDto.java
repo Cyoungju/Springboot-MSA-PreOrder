@@ -5,6 +5,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+
 @Setter
 @Getter
 @AllArgsConstructor
@@ -18,4 +21,6 @@ public class ProductResponseDto {
     private Long productPrice;
 
     private int productCount;
+
+    private LocalTime availableFrom;
 }

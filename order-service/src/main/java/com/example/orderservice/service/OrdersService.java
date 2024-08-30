@@ -10,7 +10,7 @@ public interface OrdersService {
     OrdersResponseDto purchaseProductDirectly(String email, PurchaseProductDto purchaseProductDto);
     OrdersSuccessDetails processPayment(Long orderId);
     List<OrdersResponseDto> getOrderList(String id);
-    OrdersResponseDto addOrders(String email, Long addressId);
+    OrdersResponseDto addOrders(String email, AddressResponseDto address);
     List<OrdersResponseDto> canceled(Long id, String email);
     List<OrdersResponseDto> returned(Long id, String email);
     OrdersSuccessDetails getOrderDetail(String email, Long id);

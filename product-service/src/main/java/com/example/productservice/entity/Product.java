@@ -7,6 +7,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+
 @NoArgsConstructor
 @Getter
 @Entity
@@ -35,9 +38,7 @@ public class Product extends BaseTimeEntity {
     @Column(nullable = false)
     private ProductStatus productStatus; // 기본값 AVAILABLE
 
-    //@ManyToOne(fetch = FetchType.LAZY)
-    //private Member member;
-
+    private LocalTime availableFrom;
 
     @Builder
     public Product(Long id, String name, String content, Long price, int stock, ProductStatus productStatus) {
@@ -49,25 +50,12 @@ public class Product extends BaseTimeEntity {
         this.productStatus = productStatus;
     }
 
-    public static Product create(int quantity) {
-        Product entity = new Product();
-        entity.setStock(quantity);
-        entity.setName("이름");
-        entity.setProductStatus(ProductStatus.AVAILABLE);
-        entity.setPrice(10000L);
-        return entity;
-    }
-
     public void setStock(int count){
         this.stock = count;
     }
 
-    public void increaseStock(int count) {
-        this.stock += count;
+    public void changeSaleTime(LocalTime time){
+        this.availableFrom = time;
     }
 
-    public void decreaseStock(int count) {
-        int s = this.stock - count;
-        this.stock = Math.max(s, 0);
-    }
 }

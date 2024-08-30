@@ -35,10 +35,7 @@ public class OrdersController {
     public ResponseEntity<?> getOrderDetail(@RequestHeader("X-Authenticated-User") String email, @PathVariable Long id){
         OrdersSuccessDetails response = ordersService.getOrderDetail(email,id);
         return ResponseEntity.ok(response);
-
     }
-
-
 
     @GetMapping
     public ResponseEntity<?> getList(@RequestHeader("X-Authenticated-User") String email){
@@ -48,9 +45,9 @@ public class OrdersController {
     }
 
     @PostMapping
-    public ResponseEntity<?> addOrder(@RequestHeader("X-Authenticated-User") String email, Long addressId){
+    public ResponseEntity<?> addOrder(@RequestHeader("X-Authenticated-User") String email, @RequestBody AddressResponseDto address){
 
-        OrdersResponseDto ordersResponseDto = ordersService.addOrders(email, addressId);
+        OrdersResponseDto ordersResponseDto = ordersService.addOrders(email, address);
 
         ApiUtils.ApiResult<?> apiResult = ApiUtils.success(ordersResponseDto);
         return ResponseEntity.ok(apiResult);
