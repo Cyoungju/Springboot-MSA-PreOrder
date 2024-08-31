@@ -1,6 +1,6 @@
 package com.example.orderservice.service;
 
-import com.example.orderservice.client.MemberServiceClient;
+import com.example.orderservice.client.PaymentServiceClient;
 import com.example.orderservice.client.ProductServiceClient;
 import com.example.orderservice.core.utils.EncryptionUtil;
 import com.example.orderservice.dto.*;
@@ -13,19 +13,15 @@ import com.example.orderservice.entity.OrdersStatus;
 import com.example.orderservice.repository.WishListRepository;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
-import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Random;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 
@@ -41,6 +37,8 @@ public class OrdersServiceImpl implements OrdersService {
     private final WishListRepository wishListRepository;
 
     private final ProductServiceClient productServiceClient;
+
+    private final PaymentServiceClient paymentServiceClient;
 
     private final EncryptionUtil encryptionUtil;
 
@@ -144,24 +142,30 @@ public class OrdersServiceImpl implements OrdersService {
             throw new CustomException("결제할 수 없는 상태입니다.");
         }
 
-        // 20% 확률로 결제 실패 시뮬레이션
-        boolean paymentSuccess = new Random().nextInt(100) >= 20;
+        PaymentRequest paymentRequest = new PaymentRequest(
+                orders.getId(),
+                orders.getTotalPrice()
+        );
 
-        if (paymentSuccess) {
+        PaymentResponse paymentResponse = paymentServiceClient.processPayment(paymentRequest);
+
+
+        if (paymentResponse.isSuccess()) { // order의 상태 변경 OrdersStatus.ACCEPTED, 아이템 수량 감소
+            // 결제 성공
             orders.changeOrderStatus(OrdersStatus.ACCEPTED);
             ordersRepository.save(orders);
-            // 비동기 재고 업데이트 호출
-            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
-                for (OrdersItem item : orders.getOrdersItems()) {
-                    productServiceClient.asyncBatchUpdateStock(item.getProductId(), item.getCount());
-                }
-            });
+            for (OrdersItem item : orders.getOrdersItems()) {
+                productServiceClient.updateStock(item.getProductId(), item.getCount());
+            }
             log.info("결제 성공: 주문 ID = {}", orderId);
 
-            // 비동기 작업이 완료될 때까지 기다리거나 상태를 확인
-            future.join();
-        } else {
-            throw new CustomException("결제가 실패했습니다. 다시 시도해 주세요.");
+        }else {  //order의상태변경 OrdersStatus.ACCEPTED_FAILED
+
+            // 결제가 실패했을 경우
+            orders.changeOrderStatus(OrdersStatus.ACCEPTED_FAILED);
+            ordersRepository.save(orders);
+            log.info("결제 실패: 주문 ID = {}", orderId);
+            throw new CustomException("결제가 실패했습니다.");
         }
 
         return new OrdersSuccessDetails(
