@@ -35,12 +35,3 @@ out/
 
 ### VS Code ###
 .vscode/
-
-### add ###
-application.properties
-application.yml
-mysql_order/
-mysql_user/
-mysql_product/
-mysql_payment/
-.env
