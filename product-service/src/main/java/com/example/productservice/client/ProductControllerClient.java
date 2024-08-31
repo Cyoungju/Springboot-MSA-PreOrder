@@ -14,12 +14,12 @@ public class ProductControllerClient {
     private final ProductService productService;
 
     @GetMapping("/{productId}")
-    ProductResponseDto getProduct(@PathVariable("productId") Long id){
+    public ProductResponseDto getProduct(@PathVariable("productId") Long id){
         return productService.getProductId(id);
     }
 
     @GetMapping("/status/{productId}")
-    ProductResponseDto findByIdStatusProduct(@PathVariable("productId") Long id){
+    public ProductResponseDto findByIdStatusProduct(@PathVariable("productId") Long id){
         return productService.findByIdStatusProduct(id);
     }
 
@@ -30,7 +30,7 @@ public class ProductControllerClient {
     }
     @PostMapping("/products/{id}/decrease-stock/db")
     public void asyncBatchUpdateStock(@PathVariable("id") Long productId, @RequestParam("count") int count) {
-        productService.asyncBatchUpdateStock(productId, count);
+        productService.updateStock(productId, count);
     }
 
 
@@ -39,6 +39,12 @@ public class ProductControllerClient {
     public void increaseStock(@PathVariable("id") Long productId, @RequestParam("count") int count) {
         productService.increaseStock(productId, count);
     }
+
+    @PostMapping("/products/{id}/redis-increase-stock")
+    void redisIncreaseStock(@PathVariable("id") Long productId, @RequestParam("count") int count){
+        productService.redisIncreaseStock(productId, count);
+    }
+
 
     @PostMapping("/products/{id}")
     public int getStock(@PathVariable("id") Long productId){
