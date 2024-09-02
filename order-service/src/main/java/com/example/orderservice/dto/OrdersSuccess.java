@@ -6,15 +6,12 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
-import java.util.List;
-
 
 @NoArgsConstructor
 @AllArgsConstructor
 @Setter
 @Getter
-public class OrdersResponseDto {
-
+public class OrdersSuccess {
     private Long id;
 
     private LocalDateTime createAt;
@@ -22,7 +19,4 @@ public class OrdersResponseDto {
     private String ordersStatus;
 
     private Long totalPrice;
-
-    private List<OrderItemResponseDto> orderItemList;
-
 }

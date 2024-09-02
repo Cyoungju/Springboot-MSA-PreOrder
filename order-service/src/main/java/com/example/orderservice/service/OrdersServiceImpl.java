@@ -15,6 +15,9 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.query.Order;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,15 +41,13 @@ public class OrdersServiceImpl implements OrdersService {
 
     private final ProductServiceClient productServiceClient;
 
-    private final PaymentServiceClient paymentServiceClient;
-
     private final EncryptionUtil encryptionUtil;
 
 
     // 결제 진입 - order 생성
     @Override
     @Transactional
-    public OrdersResponseDto purchaseProductDirectly(String email, PurchaseProductDto purchaseProductDto){
+    public OrdersSuccess purchaseProductDirectly(String email, PurchaseProductDto purchaseProductDto) {
         Long productId = purchaseProductDto.getProductId();
         int count = purchaseProductDto.getCount();
         AddressResponseDto address = purchaseProductDto.getAddress();
@@ -94,13 +95,15 @@ public class OrdersServiceImpl implements OrdersService {
         productServiceClient.decreaseStock(product.getProductId(), count);
 
         // 9. 생성된 주문 반환
-        return new OrdersResponseDto(
+        return new OrdersSuccess(
                 orders.getId(),
                 orders.getCreateAt(),
                 orders.getOrderStatus().getDesc(),
                 orders.getTotalPrice()
         );
+
     }
+
 
     // 시간 검증
     private void validatePurchaseTime(ProductResponseDto product) {
@@ -132,63 +135,63 @@ public class OrdersServiceImpl implements OrdersService {
     }
 
     // 결제 진행
-    @Override
-    @Transactional
-    public OrdersSuccessDetails processPayment(Long orderId){
-        Orders orders = ordersRepository.findById(orderId)
-                .orElseThrow(() -> new CustomException("주문을 찾을 수 없습니다."));
-
-        if (orders.getOrderStatus() != OrdersStatus.PAYMENT_IN_PROGRESS) {
-            throw new CustomException("결제할 수 없는 상태입니다.");
-        }
-
-        PaymentRequest paymentRequest = new PaymentRequest(
-                orders.getId(),
-                orders.getTotalPrice()
-        );
-
-        PaymentResponse paymentResponse = paymentServiceClient.processPayment(paymentRequest);
-
-
-        if (paymentResponse.isSuccess()) { // order의 상태 변경 OrdersStatus.ACCEPTED, 아이템 수량 감소
-            // 결제 성공
-            orders.changeOrderStatus(OrdersStatus.ACCEPTED);
-            ordersRepository.save(orders);
-            for (OrdersItem item : orders.getOrdersItems()) {
-                productServiceClient.updateStock(item.getProductId(), item.getCount());
-            }
-            log.info("결제 성공: 주문 ID = {}", orderId);
-
-        }else {  //order의상태변경 OrdersStatus.ACCEPTED_FAILED
-
-            // 결제가 실패했을 경우
-            orders.changeOrderStatus(OrdersStatus.ACCEPTED_FAILED);
-            ordersRepository.save(orders);
-            log.info("결제 실패: 주문 ID = {}", orderId);
-            throw new CustomException("결제가 실패했습니다.");
-        }
-
-        return new OrdersSuccessDetails(
-                orders.getId(),
-                orders.getOrderStatus().getDesc(),
-                orders.getCreateAt(),
-                orders.getOrdersItems().stream().map(
-                        item -> new ProductResponseDto(
-                                item.getProductId(),
-                                item.getProductName(),
-                                item.getProductPrice(),
-                                item.getCount(),
-                                null
-                        )).collect(Collectors.toList()),
-                new AddressResponseDto(
-                        orders.getAddressName(),
-                        encryptionUtil.decrypt(orders.getAddress()),
-                        encryptionUtil.decrypt(orders.getDetailAdr()),
-                        encryptionUtil.decrypt(orders.getPhone())
-                ),
-                orders.getTotalPrice()
-        );
-    }
+//    @Override
+//    @Transactional
+//    public OrdersSuccessDetails processPayment(Long orderId){
+//        Orders orders = ordersRepository.findById(orderId)
+//                .orElseThrow(() -> new CustomException("주문을 찾을 수 없습니다."));
+//
+//        if (orders.getOrderStatus() != OrdersStatus.PAYMENT_IN_PROGRESS) {
+//            throw new CustomException("결제할 수 없는 상태입니다.");
+//        }
+//
+//        PaymentRequest paymentRequest = new PaymentRequest(
+//                orders.getId(),
+//                orders.getTotalPrice()
+//        );
+//
+//        PaymentResponse paymentResponse = paymentServiceClient.processPayment(paymentRequest);
+//
+//
+//        if (paymentResponse.isSuccess()) { // order의 상태 변경 OrdersStatus.ACCEPTED, 아이템 수량 감소
+//            // 결제 성공
+//            orders.changeOrderStatus(OrdersStatus.ACCEPTED);
+//            ordersRepository.save(orders);
+//            for (OrdersItem item : orders.getOrdersItems()) {
+//                productServiceClient.updateStock(item.getProductId(), item.getCount());
+//            }
+//            log.info("결제 성공: 주문 ID = {}", orderId);
+//
+//        }else {  //order의상태변경 OrdersStatus.ACCEPTED_FAILED
+//
+//            // 결제가 실패했을 경우
+//            orders.changeOrderStatus(OrdersStatus.ACCEPTED_FAILED);
+//            ordersRepository.save(orders);
+//            log.info("결제 실패: 주문 ID = {}", orderId);
+//            throw new CustomException("결제가 실패했습니다.");
+//        }
+//
+//        return new OrdersSuccessDetails(
+//                orders.getId(),
+//                orders.getOrderStatus().getDesc(),
+//                orders.getCreateAt(),
+//                orders.getOrdersItems().stream().map(
+//                        item -> new ProductResponseDto(
+//                                item.getProductId(),
+//                                item.getProductName(),
+//                                item.getProductPrice(),
+//                                item.getCount(),
+//                                null
+//                        )).collect(Collectors.toList()),
+//                new AddressResponseDto(
+//                        orders.getAddressName(),
+//                        encryptionUtil.decrypt(orders.getAddress()),
+//                        encryptionUtil.decrypt(orders.getDetailAdr()),
+//                        encryptionUtil.decrypt(orders.getPhone())
+//                ),
+//                orders.getTotalPrice()
+//        );
+//    }
 
     // 주문 상세
     @Override
@@ -220,16 +223,15 @@ public class OrdersServiceImpl implements OrdersService {
         );
     }
 
-
     // 주문 목록
     @Override
-    public List<OrdersResponseDto> getOrderList(String email){
+    public List<OrdersSuccess> getOrderList(String email){
 
         // 조회한 회원 ID를 사용하여 주문 목록 조회
         List<Orders> ordersList = ordersRepository.findByMemberEmail(email);
 
         return ordersList.stream()
-            .map(order -> new OrdersResponseDto(
+            .map(order -> new OrdersSuccess(
                     order.getId(),
                     order.getCreateAt(),
                     order.getOrderStatus().getDesc(),
@@ -242,7 +244,7 @@ public class OrdersServiceImpl implements OrdersService {
     // 주문 - 장바구니 상품
     @Transactional
     @Override
-    public OrdersResponseDto addOrders(String email, AddressResponseDto address){
+    public OrdersSuccess addOrders(String email, AddressResponseDto address){
 
         // wishList 조회
         Long wishListId = wishListRepository.findByMemberEmail(email).get().getId();
@@ -309,7 +311,7 @@ public class OrdersServiceImpl implements OrdersService {
         wishListService.deleteId(wishListId);
 
         // 업데이트된 주문 목록 반환
-        return new OrdersResponseDto(
+        return new OrdersSuccess(
                 orders.getId(),
                 orders.getCreateAt(),
                 orders.getOrderStatus().getDesc(),
@@ -324,7 +326,7 @@ public class OrdersServiceImpl implements OrdersService {
     @CircuitBreaker(name = "productService", fallbackMethod = "productServiceFallback2")
     @Retry(name = "productService",  fallbackMethod = "productServiceFallback2")
     //@TimeLimiter(name = "productService")
-    public List<OrdersResponseDto> canceled(Long id, String email){
+    public List<OrdersSuccess> canceled(Long id, String email){
 
         Orders orders = ordersRepository.findById(id).orElseThrow();
         if(orders.getOrderStatus() == OrdersStatus.ACCEPTED) {
@@ -350,7 +352,7 @@ public class OrdersServiceImpl implements OrdersService {
     // 반품신청
     @Transactional
     @Override
-    public List<OrdersResponseDto> returned(Long id, String email) {
+    public List<OrdersSuccess> returned(Long id, String email) {
         Orders orders = ordersRepository.findById(id).orElseThrow();
         if (orders.getOrderStatus() == OrdersStatus.SHIPPED) {
             orders.changeOrderStatus(OrdersStatus.RETURN_REQUESTED);
@@ -369,6 +371,47 @@ public class OrdersServiceImpl implements OrdersService {
         }
     }
 
+    // order 정보 전송
+    @Override
+    public OrdersResponseDto getOrder(Long id) {
+        Orders orders = ordersRepository.findById(id).orElseThrow(
+                ()-> new CustomException("상품을 찾을수 없습니다.")
+        );
+
+        System.out.println(orders.getOrderStatus().getDesc());
+
+        OrdersResponseDto ordersResponseDto = new OrdersResponseDto(
+                orders.getId(),
+                orders.getCreateAt(),
+                orders.getOrderStatus().getDesc(),
+                orders.getTotalPrice(),
+                orders.getOrdersItems().stream().map(
+                        ordersItem -> new OrderItemResponseDto(
+                                ordersItem.getProductId(),
+                                ordersItem.getCount()
+                        )
+                ).collect(Collectors.toList())
+
+        );
+        return ordersResponseDto;
+    }
+
+    @Override
+    @Transactional
+    public void changeStatus(Long orderId, int orderStatus) {
+        Orders orders = ordersRepository.findById(orderId).orElseThrow(
+                ()-> new CustomException("상품을 찾을수 없습니다.")
+        );
+
+        if(orderStatus == 8) // 결제취소
+            orders.changeOrderStatus(OrdersStatus.ACCEPTED_FAILED);
+
+        else if(orderStatus == 1)
+            orders.changeOrderStatus(OrdersStatus.ACCEPTED);
+
+
+        ordersRepository.save(orders);
+    }
 
     // 상품 조회
     @CircuitBreaker(name = "productService", fallbackMethod = "productServiceFallback")
@@ -400,7 +443,7 @@ public class OrdersServiceImpl implements OrdersService {
     }
 
     // 수량복구 - 예외처리 메소드
-    public List<OrdersResponseDto> productServiceFallback2(Long id, String email, Throwable throwable) {
+    public List<OrdersSuccess> productServiceFallback2(Long id, String email, Throwable throwable) {
         log.error("Product Service is down: {}", throwable.getMessage());
         return Collections.emptyList();
     }

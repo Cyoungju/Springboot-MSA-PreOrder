@@ -1,4 +1,5 @@
-package com.example.orderservice.dto;
+package com.example.paymentservice.dto;
+
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -14,7 +15,6 @@ import java.util.List;
 @Setter
 @Getter
 public class OrdersResponseDto {
-
     private Long id;
 
     private LocalDateTime createAt;
@@ -24,5 +24,4 @@ public class OrdersResponseDto {
     private Long totalPrice;
 
     private List<OrderItemResponseDto> orderItemList;
-
 }

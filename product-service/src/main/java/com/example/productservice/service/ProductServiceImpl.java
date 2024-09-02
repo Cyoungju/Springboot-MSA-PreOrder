@@ -111,17 +111,7 @@ public class ProductServiceImpl implements ProductService {
 
         try {
             // Redis에서 현재 재고 조회
-            Integer currentStock = redisTemplate.opsForValue().get(redisKey);
-
-            System.out.println(currentStock);
-
-            if (currentStock == null) {
-                // Redis에 재고가 없으면 데이터베이스에서 조회 후 Redis에 캐시
-                Product product = productRepository.findById(productId)
-                        .orElseThrow(() -> new RuntimeException("제품을 찾을 수 없습니다."));
-                currentStock = product.getStock();
-                redisTemplate.opsForValue().set(redisKey, currentStock);
-            }
+            Integer currentStock = getStock(productId);
 
             if (currentStock < count) {
                 throw new RuntimeException("재고가 부족합니다.");
@@ -134,14 +124,6 @@ public class ProductServiceImpl implements ProductService {
             lock.unlock();
         }
     }
-
-    // 데이터베이스에서 재고 감소
-    //@Async
-//    @Override
-//    @Transactional
-//    public void asyncBatchUpdateStock(Long productId, int count) {
-//        updateStockBatch(productId, count);
-//    }
 
     @Transactional
     public void updateStock(Long productId, int count) {
@@ -167,15 +149,7 @@ public class ProductServiceImpl implements ProductService {
         String redisKey = PRODUCT_KEY_PREFIX + productId.toString();
 
         // Redis에서 현재 재고 조회
-        Integer currentStock = redisTemplate.opsForValue().get(redisKey);
-
-        if (currentStock == null) {
-            // Redis에 재고가 없으면 데이터베이스에서 조회 후 Redis에 캐시
-            Product product = productRepository.findById(productId)
-                    .orElseThrow(() -> new RuntimeException("제품을 찾을 수 없습니다."));
-            currentStock = product.getStock();
-            redisTemplate.opsForValue().set(redisKey, currentStock);
-        }
+        Integer currentStock = getStock(productId);
 
         // 데이터베이스에서 재고 증가
         Product product = productRepository.findById(productId)
@@ -193,15 +167,7 @@ public class ProductServiceImpl implements ProductService {
         String redisKey = PRODUCT_KEY_PREFIX + productId.toString();
 
         // Redis에서 현재 재고 조회
-        Integer currentStock = redisTemplate.opsForValue().get(redisKey);
-
-        if (currentStock == null) {
-            // Redis에 재고가 없으면 데이터베이스에서 조회 후 Redis에 캐시
-            Product product = productRepository.findById(productId)
-                    .orElseThrow(() -> new RuntimeException("제품을 찾을 수 없습니다."));
-            currentStock = product.getStock();
-            redisTemplate.opsForValue().set(redisKey, currentStock);
-        }
+        Integer currentStock = getStock(productId);
 
         // Redis에서 재고 증가
         redisTemplate.opsForValue().set(redisKey, currentStock + count);

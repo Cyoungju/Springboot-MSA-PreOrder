@@ -49,6 +49,10 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation group: 'org.redisson', name: 'redisson-spring-boot-starter', version: '3.35.0'
 
+    // kafka
+    implementation group: 'org.springframework.kafka', name: 'spring-kafka', version: '3.2.3'
+
+
 }
 dependencyManagement {
     imports {

@@ -19,17 +19,17 @@ public class OrdersController {
 
     @PostMapping("/purchase")
     public ResponseEntity<?> purchase(@RequestHeader("X-Authenticated-User") String email, @RequestBody PurchaseProductDto purchaseProductDto){
-        OrdersResponseDto ordersResponseDto = ordersService.purchaseProductDirectly(email, purchaseProductDto);
+        OrdersSuccess ordersResponseDto = ordersService.purchaseProductDirectly(email, purchaseProductDto);
         ApiUtils.ApiResult<?> apiResult = ApiUtils.success(ordersResponseDto);
         return ResponseEntity.ok(apiResult);
     }
-
-    @PostMapping("/payment/{orderId}")
-    public ResponseEntity<?> payment(@PathVariable Long orderId){
-        OrdersSuccessDetails ordersResponseDto = ordersService.processPayment(orderId);
-        ApiUtils.ApiResult<?> apiResult = ApiUtils.success(ordersResponseDto);
-        return ResponseEntity.ok(apiResult);
-    }
+//
+//    @PostMapping("/payment/{orderId}")
+//    public ResponseEntity<?> payment(@PathVariable Long orderId){
+//        OrdersSuccessDetails ordersResponseDto = ordersService.processPayment(orderId);
+//        ApiUtils.ApiResult<?> apiResult = ApiUtils.success(ordersResponseDto);
+//        return ResponseEntity.ok(apiResult);
+//    }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getOrderDetail(@RequestHeader("X-Authenticated-User") String email, @PathVariable Long id){
@@ -39,7 +39,7 @@ public class OrdersController {
 
     @GetMapping
     public ResponseEntity<?> getList(@RequestHeader("X-Authenticated-User") String email){
-        List<OrdersResponseDto> ordersResponseDto = ordersService.getOrderList(email);
+        List<OrdersSuccess> ordersResponseDto = ordersService.getOrderList(email);
         ApiUtils.ApiResult<?> apiResult = ApiUtils.success(ordersResponseDto);
         return ResponseEntity.ok(apiResult);
     }
@@ -47,7 +47,7 @@ public class OrdersController {
     @PostMapping
     public ResponseEntity<?> addOrder(@RequestHeader("X-Authenticated-User") String email, @RequestBody AddressResponseDto address){
 
-        OrdersResponseDto ordersResponseDto = ordersService.addOrders(email, address);
+        OrdersSuccess ordersResponseDto = ordersService.addOrders(email, address);
 
         ApiUtils.ApiResult<?> apiResult = ApiUtils.success(ordersResponseDto);
         return ResponseEntity.ok(apiResult);
@@ -56,7 +56,7 @@ public class OrdersController {
     @PatchMapping("/{id}")
     public ResponseEntity<?> cancelOrder(@PathVariable Long id, @RequestHeader("X-Authenticated-User") String email){
 
-        List<OrdersResponseDto> ordersResponseDto = ordersService.canceled(id, email);
+        List<OrdersSuccess> ordersResponseDto = ordersService.canceled(id, email);
 
         ApiUtils.ApiResult<?> apiResult = ApiUtils.success(ordersResponseDto);
         return ResponseEntity.ok(apiResult);
@@ -65,7 +65,7 @@ public class OrdersController {
     @PatchMapping("/return/{id}")
     public ResponseEntity<?> returnOrder(@PathVariable Long id, @RequestHeader("X-Authenticated-User") String email){
 
-        List<OrdersResponseDto> ordersResponseDto = ordersService.returned(id, email);
+        List<OrdersSuccess> ordersResponseDto = ordersService.returned(id, email);
 
         ApiUtils.ApiResult<?> apiResult = ApiUtils.success(ordersResponseDto);
         return ResponseEntity.ok(apiResult);
