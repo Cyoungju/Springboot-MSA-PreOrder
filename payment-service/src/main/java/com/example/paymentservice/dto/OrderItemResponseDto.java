@@ -6,13 +6,13 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Getter
-@Setter
-@AllArgsConstructor
 @NoArgsConstructor
-public class PaymentRequest {
+@AllArgsConstructor
+@Setter
+@Getter
+public class OrderItemResponseDto {
 
-    private Long orderId;
+    private Long orderItemId;
 
-    private Long totalPrice;
+    private int OrderItemCount;
 }

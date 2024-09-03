@@ -23,7 +23,7 @@ public class EmailController {
     public ResponseEntity<?> mailSend(@RequestBody EmailDto emailDto) {
         int num = emailService.sendMail(emailDto);
         // Todo: 작업완료 후 "이메일이 전송되었습니다" 수정
-        return ResponseEntity.ok( ApiUtils.success(num) );
+        return ResponseEntity.ok( ApiUtils.success(" 이메일이 전송되었습니다. " + num) );
     }
 
     // 이메일 체크

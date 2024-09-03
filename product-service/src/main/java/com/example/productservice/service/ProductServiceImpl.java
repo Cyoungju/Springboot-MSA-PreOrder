@@ -7,6 +7,7 @@ import com.example.productservice.dto.ProductDto;
 import com.example.productservice.entity.ProductStatus;
 import com.example.productservice.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,11 +19,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalTime;
+import java.util.concurrent.TimeUnit;
 
 
 @Transactional(readOnly = true) // 읽기 전용
 @RequiredArgsConstructor
 @Service
+@Slf4j
 public class ProductServiceImpl implements ProductService {
 
     private final RedisTemplate<String, Integer> redisTemplate;
@@ -111,17 +114,7 @@ public class ProductServiceImpl implements ProductService {
 
         try {
             // Redis에서 현재 재고 조회
-            Integer currentStock = redisTemplate.opsForValue().get(redisKey);
-
-            System.out.println(currentStock);
-
-            if (currentStock == null) {
-                // Redis에 재고가 없으면 데이터베이스에서 조회 후 Redis에 캐시
-                Product product = productRepository.findById(productId)
-                        .orElseThrow(() -> new RuntimeException("제품을 찾을 수 없습니다."));
-                currentStock = product.getStock();
-                redisTemplate.opsForValue().set(redisKey, currentStock);
-            }
+            Integer currentStock = getStock(productId);
 
             if (currentStock < count) {
                 throw new RuntimeException("재고가 부족합니다.");
@@ -132,21 +125,14 @@ public class ProductServiceImpl implements ProductService {
 
         }finally {
             lock.unlock();
+
         }
     }
-
-    // 데이터베이스에서 재고 감소
-    //@Async
-//    @Override
-//    @Transactional
-//    public void asyncBatchUpdateStock(Long productId, int count) {
-//        updateStockBatch(productId, count);
-//    }
 
     @Transactional
     public void updateStock(Long productId, int count) {
 
-        Product product = productRepository.findById(productId)
+        Product product = productRepository.findByIdForUpdate(productId)
                 .orElseThrow(() -> new RuntimeException("제품을 찾을 수 없습니다. 제품 ID: " + productId));
 
         // 재고 감소
@@ -156,8 +142,11 @@ public class ProductServiceImpl implements ProductService {
             throw new RuntimeException("재고가 부족합니다. 제품 ID: " + productId);
         }
         product.setStock(newStock);
+
         productRepository.save(product);
+
     }
+
 
     
     // redis , DB에서 재고 증가
@@ -167,15 +156,7 @@ public class ProductServiceImpl implements ProductService {
         String redisKey = PRODUCT_KEY_PREFIX + productId.toString();
 
         // Redis에서 현재 재고 조회
-        Integer currentStock = redisTemplate.opsForValue().get(redisKey);
-
-        if (currentStock == null) {
-            // Redis에 재고가 없으면 데이터베이스에서 조회 후 Redis에 캐시
-            Product product = productRepository.findById(productId)
-                    .orElseThrow(() -> new RuntimeException("제품을 찾을 수 없습니다."));
-            currentStock = product.getStock();
-            redisTemplate.opsForValue().set(redisKey, currentStock);
-        }
+        Integer currentStock = getStock(productId);
 
         // 데이터베이스에서 재고 증가
         Product product = productRepository.findById(productId)
@@ -193,15 +174,7 @@ public class ProductServiceImpl implements ProductService {
         String redisKey = PRODUCT_KEY_PREFIX + productId.toString();
 
         // Redis에서 현재 재고 조회
-        Integer currentStock = redisTemplate.opsForValue().get(redisKey);
-
-        if (currentStock == null) {
-            // Redis에 재고가 없으면 데이터베이스에서 조회 후 Redis에 캐시
-            Product product = productRepository.findById(productId)
-                    .orElseThrow(() -> new RuntimeException("제품을 찾을 수 없습니다."));
-            currentStock = product.getStock();
-            redisTemplate.opsForValue().set(redisKey, currentStock);
-        }
+        Integer currentStock = getStock(productId);
 
         // Redis에서 재고 증가
         redisTemplate.opsForValue().set(redisKey, currentStock + count);
