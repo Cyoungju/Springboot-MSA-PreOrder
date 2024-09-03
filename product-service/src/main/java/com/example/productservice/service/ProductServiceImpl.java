@@ -7,6 +7,7 @@ import com.example.productservice.dto.ProductDto;
 import com.example.productservice.entity.ProductStatus;
 import com.example.productservice.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,11 +19,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalTime;
+import java.util.concurrent.TimeUnit;
 
 
 @Transactional(readOnly = true) // 읽기 전용
 @RequiredArgsConstructor
 @Service
+@Slf4j
 public class ProductServiceImpl implements ProductService {
 
     private final RedisTemplate<String, Integer> redisTemplate;
@@ -122,13 +125,14 @@ public class ProductServiceImpl implements ProductService {
 
         }finally {
             lock.unlock();
+
         }
     }
 
     @Transactional
     public void updateStock(Long productId, int count) {
 
-        Product product = productRepository.findById(productId)
+        Product product = productRepository.findByIdForUpdate(productId)
                 .orElseThrow(() -> new RuntimeException("제품을 찾을 수 없습니다. 제품 ID: " + productId));
 
         // 재고 감소
@@ -138,8 +142,11 @@ public class ProductServiceImpl implements ProductService {
             throw new RuntimeException("재고가 부족합니다. 제품 ID: " + productId);
         }
         product.setStock(newStock);
+
         productRepository.save(product);
+
     }
+
 
     
     // redis , DB에서 재고 증가

@@ -72,17 +72,17 @@ public class PaymentService {
     public boolean processPayment(Payment payment){
 
         // 20% 확률로 결제 실패 시뮬레이션
-        //boolean paymentSuccess = new Random().nextInt(100) >= 20;
+        boolean paymentSuccess = new Random().nextInt(100) >= 20;
 
-        //if (paymentSuccess) {
+        if (paymentSuccess) {
             //결제 성공시 paymentStatus상태 변경
             payment.changePaymentStatus(true);
             paymentRepository.save(payment);
             return true;
-//        } else {
-//            paymentRepository.save(payment);
-//            return false;
-//        }
+        } else {
+            paymentRepository.save(payment);
+            return false;
+        }
 
     }
 

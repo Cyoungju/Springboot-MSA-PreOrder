@@ -25,6 +25,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 
@@ -48,6 +49,12 @@ public class OrdersServiceImpl implements OrdersService {
     @Override
     @Transactional
     public OrdersSuccess purchaseProductDirectly(String email, PurchaseProductDto purchaseProductDto) {
+
+        // 20% 확률로 결제 시도 중 이탈 시뮬레이션
+        if (new Random().nextInt(100) < 20) {
+            throw new CustomException("결제 시도 중 고객이 이탈했습니다.");
+        }
+
         Long productId = purchaseProductDto.getProductId();
         int count = purchaseProductDto.getCount();
         AddressResponseDto address = purchaseProductDto.getAddress();
