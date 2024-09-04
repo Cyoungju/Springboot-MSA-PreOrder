@@ -1,5 +1,5 @@
 # 🛍 선착순 구매
-Spring boot 기반의 **E-commerce 선착순 구매 시스템**입니다.  
+Spring boot 기반의 **대규모의 트래픽을 처리해 선착순 구매 기능을 지원**하는 E-commerce 서비스 입니다.  
 **Redis와 Kafka** 를 활용해 **동시성 처리** 와 빠른 주문 처리를 구현하였으며, **캐싱을 통한 실시간 재고 관리** 기능을 제공합니다.
 또한 **MSA(Microservices Architecture)** 를 도입하여 각 서비스의 확장과 유지보수성을 향상시켰습니다.
 
