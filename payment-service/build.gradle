@@ -50,6 +50,10 @@ dependencies {
 	implementation group: 'io.github.resilience4j', name: 'resilience4j-spring-boot3', version: '2.2.0'
 	implementation group: 'io.github.resilience4j', name: 'resilience4j-retry', version: '2.2.0'
 	implementation group: 'io.github.resilience4j', name: 'resilience4j-circuitbreaker', version: '2.2.0'
+
+	//kafka
+	implementation group: 'org.springframework.kafka', name: 'spring-kafka', version: '3.2.3'
+
 }
 dependencyManagement {
 	imports {
