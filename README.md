@@ -5,7 +5,8 @@
 일반적인 상품 구매 기능과, 한정된 수량의 상품을 특정 시간에 오픈하여 선착순으로 구매할 수 있는 기능을 제공합니다.
 <br/>
 - 개발 기간 : 2024.08.07 ~ 2024.09.04
-- [API 명세서](https://documenter.getpostman.com/view/30578335/2sA3s3GqpS){: target="_blank"}
+-
+<a href="https://documenter.getpostman.com/view/30578335/2sA3s3GqpS" target="_blank">API 명세서</a>
 <br/><br/>
 
 ## Project Archictecture
