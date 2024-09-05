@@ -1,12 +1,12 @@
 package com.example.orderservice.service;
 
-import com.example.orderservice.client.PaymentServiceClient;
 import com.example.orderservice.client.ProductServiceClient;
 import com.example.orderservice.core.utils.EncryptionUtil;
 import com.example.orderservice.dto.*;
 import com.example.orderservice.core.exception.CustomException;
 import com.example.orderservice.entity.OrdersItem;
 import com.example.orderservice.entity.WishListItem;
+import com.example.orderservice.kafka.KafkaProducer;
 import com.example.orderservice.repository.OrdersRepository;
 import com.example.orderservice.entity.Orders;
 import com.example.orderservice.entity.OrdersStatus;
@@ -15,9 +15,6 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.query.Order;
-import org.redisson.api.RLock;
-import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,15 +39,21 @@ public class OrdersServiceImpl implements OrdersService {
 
     private final ProductServiceClient productServiceClient;
 
-    private final PaymentServiceClient paymentServiceClient;
-
     private final EncryptionUtil encryptionUtil;
+
+    private final KafkaProducer kafkaProducer;
+    private static final String PAYMENT_TOPIC = "payment-topic";
 
 
     // 결제 진입 - order 생성
     @Override
     @Transactional
     public OrdersSuccess purchaseProductDirectly(String email, PurchaseProductDto purchaseProductDto) {
+
+        // 20% 확률로 결제 시도 중 이탈 시뮬레이션
+//        if (new Random().nextInt(100) < 20) {
+//            throw new CustomException("결제 시도 중 고객이 이탈했습니다.");
+//        }
 
         Long productId = purchaseProductDto.getProductId();
         int count = purchaseProductDto.getCount();
@@ -78,8 +81,6 @@ public class OrdersServiceImpl implements OrdersService {
         productServiceClient.decreaseStock(product.getProductId(), count);
 
         // 결제요청
-        // 결제정보 저장
-        // feign client 요청
         OrdersResponseDto ordersResponseDto = new OrdersResponseDto(
                 orders.getId(),
                 orders.getCreateAt(),
@@ -92,15 +93,8 @@ public class OrdersServiceImpl implements OrdersService {
                 )).collect(Collectors.toList())
 
         );
-        boolean success = paymentServiceClient.processPayment(ordersResponseDto);
 
-        // 상태변경
-        if(success){
-            orders.changeOrderStatus(OrdersStatus.ACCEPTED);
-        }else {
-            orders.changeOrderStatus(OrdersStatus.ACCEPTED_FAILED);
-        }
-
+        kafkaProducer.sendPayment(PAYMENT_TOPIC, ordersResponseDto);
 
         // 9. 생성된 주문 반환
         return new OrdersSuccess(
@@ -291,6 +285,22 @@ public class OrdersServiceImpl implements OrdersService {
         // WishList 비우기
         wishListService.deleteId(wishListId);
 
+        // 결제요청
+        OrdersResponseDto ordersResponseDto = new OrdersResponseDto(
+                orders.getId(),
+                orders.getCreateAt(),
+                orders.getOrderStatus().getDesc(),
+                orders.getTotalPrice(),
+                orders.getOrdersItems().stream().map(
+                        item -> new OrderItemResponseDto(
+                                item.getProductId(),
+                                item.getCount()
+                        )).collect(Collectors.toList())
+
+        );
+
+        kafkaProducer.sendPayment(PAYMENT_TOPIC, ordersResponseDto);
+
         // 업데이트된 주문 목록 반환
         return new OrdersSuccess(
                 orders.getId(),
@@ -351,32 +361,6 @@ public class OrdersServiceImpl implements OrdersService {
             throw new CustomException("반품 불가한 상품 입니다");
         }
     }
-
-    // order 정보 전송
-    @Override
-    public OrdersResponseDto getOrder(Long id) {
-        Orders orders = ordersRepository.findById(id).orElseThrow(
-                ()-> new CustomException("상품을 찾을수 없습니다.")
-        );
-
-        System.out.println(orders.getOrderStatus().getDesc());
-
-        OrdersResponseDto ordersResponseDto = new OrdersResponseDto(
-                orders.getId(),
-                orders.getCreateAt(),
-                orders.getOrderStatus().getDesc(),
-                orders.getTotalPrice(),
-                orders.getOrdersItems().stream().map(
-                        ordersItem -> new OrderItemResponseDto(
-                                ordersItem.getProductId(),
-                                ordersItem.getCount()
-                        )
-                ).collect(Collectors.toList())
-
-        );
-        return ordersResponseDto;
-    }
-
 
     // 상품 조회
     @CircuitBreaker(name = "productService", fallbackMethod = "productServiceFallback")
