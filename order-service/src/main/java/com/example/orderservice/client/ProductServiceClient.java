@@ -18,9 +18,6 @@ public interface ProductServiceClient {
     @PostMapping("/api/client/products/{id}/decrease-stock")
     void decreaseStock(@PathVariable("id") Long productId, @RequestParam("count") int count);
 
-//    @PostMapping("/api/client/products/{id}/decrease-stock/db")
-//    void updateStock(@PathVariable("id") Long productId, @RequestParam("count") int count);
-
     @PostMapping("/api/client/products/{id}/increase-stock")
     void increaseStock(@PathVariable("id") Long productId, @RequestParam("count") int count);
 

@@ -6,15 +6,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-//@RequestMapping("/api/payment")
 @RequiredArgsConstructor
 public class PaymentController {
 
     private final PaymentService paymentService;
 
     @PostMapping("/payments/process")
-    public boolean processPayment(@RequestBody OrdersResponseDto ordersResponseDto) {
-        return paymentService.processPayment(ordersResponseDto);
+    public void processPayment(@RequestBody OrdersResponseDto ordersResponseDto) {
+        paymentService.processPayment(ordersResponseDto);
     }
 
 }
