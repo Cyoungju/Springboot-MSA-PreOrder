@@ -21,11 +21,14 @@ public class KafkaConsumerConfig {
     public ConsumerFactory<String,String> consumerFactory(){
         Map<String, Object> properties = new HashMap<>();
         properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,"127.0.0.1:9092");
-//        properties.put(ConsumerConfig.GROUP_ID_CONFIG,"consumerGroupId");
         properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class); //key 역직렬화
         properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class); // value 역직렬화
         properties.put(ConsumerConfig.GROUP_ID_CONFIG, "new-group-id-" + UUID.randomUUID());
-//        properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
+        properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
+
+        properties.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, "10000"); // 세션 타임아웃
+        properties.put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, "3000"); // 하트비트 간격
+
         return new DefaultKafkaConsumerFactory<>(properties);
     }
 
@@ -34,6 +37,8 @@ public class KafkaConsumerConfig {
         ConcurrentKafkaListenerContainerFactory<String, String >
                 kafkaListenerContainerFactory = new ConcurrentKafkaListenerContainerFactory<>();
         kafkaListenerContainerFactory.setConsumerFactory(consumerFactory());
+        kafkaListenerContainerFactory.getContainerProperties().setPollTimeout(3000); // 폴 타임아웃
+
         return kafkaListenerContainerFactory;
     }
 }

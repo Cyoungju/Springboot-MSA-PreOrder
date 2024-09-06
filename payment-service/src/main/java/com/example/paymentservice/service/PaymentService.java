@@ -32,47 +32,13 @@ public class PaymentService {
 
         Long orderId = ordersResponseDto.getId();
 
-
         if (!ordersResponseDto.getOrdersStatus().equals("결제 진행 중")) {
             throw new CustomException("결제할 수 없는 상태입니다.");
         }
 
-        // 결제 요청시 결제 정보 생성
-        Payment payment = Payment.builder()
-                .paymentStatus(false)
-                .orderId(ordersResponseDto.getId())
-                .totalPrice(ordersResponseDto.getTotalPrice())
-                .build();
-
-        boolean success = processPayment(payment);
-
+        boolean success = createPayment(ordersResponseDto);
 
         handlePaymentResult(success, orderId, ordersResponseDto);
-
-
-//        if (success) { // order의 상태 변경 OrdersStatus.ACCEPTED, 아이템 수량 감소
-//            // 결제 성공
-//            // 성공 메시지 보내기
-//            // todo: kafka에 결제 성공 전
-//            // order에서 상태변경
-//            // product에서 재고 변경
-//            //ordersServiceClient.changeStatus(orderId,1);
-//            ordersResponseDto.getOrderItemList().forEach(product -> {
-//                productServiceClient.updateStock(product.getOrderItemId(), product.getOrderItemCount());
-//            });
-//            return true;
-//
-//        }else {  //order의상태변경 OrdersStatus.ACCEPTED_FAILED
-//            // todo: kafka에 결제 실패 전송
-//            // order에서 상태변경
-//            // product에서 재고 변경
-//            //ordersServiceClient.changeStatus(orderId,8);
-//            ordersResponseDto.getOrderItemList().forEach(product -> {
-//                productServiceClient.redisIncreaseStock(product.getOrderItemId(), product.getOrderItemCount());
-//            });
-//
-//            return false;
-//        }
     }
 
     private void handlePaymentResult(boolean success, Long orderId, OrdersResponseDto orders) {
@@ -93,7 +59,13 @@ public class PaymentService {
 
 
 
-    private boolean processPayment(Payment payment) {
+    public boolean createPayment(OrdersResponseDto ordersResponseDto) {
+        // 결제 요청시 결제 정보 생성
+        Payment payment = Payment.builder()
+                .paymentStatus(false)
+                .orderId(ordersResponseDto.getId())
+                .totalPrice(ordersResponseDto.getTotalPrice())
+                .build();
         // 20% 확률로 결제 실패 시뮬레이션
         //boolean paymentSuccess = new Random().nextInt(100) >= 20;
 
