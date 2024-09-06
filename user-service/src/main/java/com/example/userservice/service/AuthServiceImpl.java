@@ -1,29 +1,19 @@
 package com.example.userservice.service;
 
-import com.example.userservice.entity.Member;
 import com.example.userservice.entity.RefreshToken;
 import com.example.userservice.jwt.JwtUtil;
-import com.example.userservice.repository.MemberRepository;
 import com.example.userservice.repository.RefreshRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.UUID;
 
 @RequiredArgsConstructor

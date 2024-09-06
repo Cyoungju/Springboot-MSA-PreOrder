@@ -43,4 +43,8 @@ mysql_order/
 mysql_user/
 mysql_product/
 mysql_payment/
+kafka-data/
+kafka-logs/
+zookeeper-data/
+zookeeper-logs/
 .env

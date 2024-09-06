@@ -132,7 +132,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public void updateStock(Long productId, int count) {
 
-        Product product = productRepository.findByIdForUpdate(productId)
+        Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("제품을 찾을 수 없습니다. 제품 ID: " + productId));
 
         // 재고 감소

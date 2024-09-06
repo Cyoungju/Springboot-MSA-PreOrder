@@ -67,7 +67,6 @@ public class OrdersServiceImpl implements OrdersService {
         validatePurchaseTime(product);
         // ====== 검증작업 ======
 
-
         // 1. 상품 수량 조회 - 재고확인
         checkStock(productId, count, product.getProductName());
 
@@ -106,7 +105,8 @@ public class OrdersServiceImpl implements OrdersService {
 
     }
 
-    private Orders createOrder(String email, AddressResponseDto address, ProductResponseDto product, int count) {
+
+    public Orders createOrder(String email, AddressResponseDto address, ProductResponseDto product, int count) {
         // 주문 생성
         Orders orders = Orders.builder()
                 .orderStatus(OrdersStatus.PAYMENT_IN_PROGRESS)
@@ -133,6 +133,7 @@ public class OrdersServiceImpl implements OrdersService {
         // 주문에 아이템 추가 및 총 가격 설정
         orders.changeOrderItem(ordersItems);
         orders.changeTotalPrice(ordersItem.getProductPrice());
+
 
         return orders;
     }
