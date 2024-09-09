@@ -35,20 +35,15 @@
 <img src="http://img.shields.io/badge/intellijidea-000000?style=for-the-badge&logo=Python&logoColor=white">  
 
 ### 언어 / 프레임워크  
-<img src="http://img.shields.io/badge/java-007396?style=for-the-badge&logo=java&logoColor=white">
-<img src="http://img.shields.io/badge/gradle-02303A?style=for-the-badge&logo=gradle&logoColor=white">
-<img src="http://img.shields.io/badge/springboot-6DB33F?style=for-the-badge&logo=SPRINGBOOT&logoColor=white">  
+<img src="http://img.shields.io/badge/java-007396?style=for-the-badge&logo=java&logoColor=white"> <img src="http://img.shields.io/badge/gradle-02303A?style=for-the-badge&logo=gradle&logoColor=white"> <img src="http://img.shields.io/badge/springboot-6DB33F?style=for-the-badge&logo=SPRINGBOOT&logoColor=white">  
 
 
 ### 인증/인가  
-<img src="http://img.shields.io/badge/Spring Security-6DB33F?style=for-the-badge&logo=SpringSecurity&logoColor=white">
-<img src="http://img.shields.io/badge/JSON Web Token-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white">
-<img src="http://img.shields.io/badge/api Gateway -6DB33F?style=for-the-badge&logo=spring&logoColor=white" alt="">  
+<img src="http://img.shields.io/badge/Spring Security-6DB33F?style=for-the-badge&logo=SpringSecurity&logoColor=white"> <img src="http://img.shields.io/badge/JSON Web Token-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white"> <img src="http://img.shields.io/badge/api Gateway -6DB33F?style=for-the-badge&logo=spring&logoColor=white" alt="">  
 
 
 ### 데이터베이스  
-<img src="http://img.shields.io/badge/mysql-4479A1?style=for-the-badge&logo=mysql&logoColor=white">
-<img src="http://img.shields.io/badge/redis-FF4438?style=for-the-badge&logo=redis&logoColor=white">
+<img src="http://img.shields.io/badge/mysql-4479A1?style=for-the-badge&logo=mysql&logoColor=white"> <img src="http://img.shields.io/badge/redis-FF4438?style=for-the-badge&logo=redis&logoColor=white">
 
 ### 메시징
 <img src="http://img.shields.io/badge/kafka-231F20?style=for-the-badge&logo=apachekafka&logoColor=white">
@@ -57,8 +52,7 @@
 <img src="http://img.shields.io/badge/docker-2496ED?style=for-the-badge&logo=docker&logoColor=white">  
 
 ### 기타
-<img src="http://img.shields.io/badge/Netflix Eureka-E50914?style=for-the-badge&logo=netflix&logoColor=white">
-<img src="http://img.shields.io/badge/google smtp-4285F4?style=for-the-badge&logo=google&logoColor=white">  
+<img src="http://img.shields.io/badge/Netflix Eureka-E50914?style=for-the-badge&logo=netflix&logoColor=white"> <img src="http://img.shields.io/badge/google smtp-4285F4?style=for-the-badge&logo=google&logoColor=white">  
 
 
 ## 구현기능
