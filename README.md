@@ -5,7 +5,7 @@
 - **프로젝트 블로그** [(바로가기)](https://jjuya.tistory.com/category/%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8/Springboot-MSA-%20PreOrder)
 - **API 명세서** [(바로가기)](https://documenter.getpostman.com/view/30578335/2sA3s3GqpS)  
 - **테스트 시나리오** [(바로가기)](https://documenter.getpostman.com/view/30578335/2sA3s3GqpS)  
-
+<br/>
 
 ## 목차
 - [🛠️ 프로젝트 아키텍처](#프로젝트-아키텍처)
@@ -22,7 +22,7 @@
   - 사용자 보안 강화
   - 마이크로소프트 간 장애 전파 방지
 - [📌 버전](#버전)  
-
+  <br/>
  
 ## 🛠️ 프로젝트 아키텍처
 ### ERD 
@@ -63,6 +63,7 @@ _**PAYMENT-SERVICE**_
 - 결제 프로세스, 결제 정보 관련 담당
  
 </details>
+<br/>
 
 ## 🚀 사용기술
 ### IDE  
@@ -91,6 +92,7 @@ _**PAYMENT-SERVICE**_
 ### 기타  
 <img src="http://img.shields.io/badge/google smtp-4285F4?style=for-the-badge&logo=google&logoColor=white">  
 
+<br/>
 
  
 ## ⚖️ 기술적 의사 결정
@@ -100,7 +102,7 @@ _**PAYMENT-SERVICE**_
 
 ### 마이크로소프트 아키텍처(MSA)
 
- 
+<br/>
 
 ## 💻 구현기능
 ### CRUD 기능 구현
@@ -121,8 +123,8 @@ _**PAYMENT-SERVICE**_
 
 ### JWT 토큰 발급
 - JWT 토큰 발급을 통한 무상태 인증 시스템 구현  
-  
 
+<br/>
 
 ## 📈트러블슈팅
 
@@ -194,6 +196,8 @@ _**PAYMENT-SERVICE**_
 
   - Circuit Breaker와 Retry 메커니즘을 도입, 장애가 발생하면 그 서비스로의 요청을 차단
   - 일시적인 장애 또는 네트워크 지연이 발생할 경우에도 자동으로 재시도를 진행
+ 
+<br/>
 
 ## 📌 버전
 ### v11.15.7
