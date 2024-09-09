@@ -153,7 +153,7 @@ _**PAYMENT-SERVICE**_
 - 쓰기 전략 변경 Through → Behind
 - 성능 개선과 재고의 궁극적 일관성 유지
 
-`TPS : 62.5/sec -> 94.9/sec (약 51.84% 성능 개선)`  
+<span style="background:#ececec">TPS : 62.5/sec -> 94.9/sec <b style="color:red">(약 51.84% 성능 개선)</b></span>  
 <br/>
 
 ### kafka 메시징 처리  
