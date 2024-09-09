@@ -3,7 +3,7 @@
 일반적인 상품 구매 기능과, 한정된 수량의 상품을 특정 시간에 오픈하여 선착순으로 예약 구매할 수 있는 기능을 제공  
 
 - 개발 기간 : 2024.08.07 ~ 2024.09.06
-- 프로젝트 블로그 [(바로가기)](https://jjuya.tistory.com/category/%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8/Springboot-MSA-%20PreOrder)
+- **프로젝트 블로그** [(바로가기)](https://jjuya.tistory.com/category/%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8/Springboot-MSA-%20PreOrder)
 - API 명세서 [(바로가기)](https://documenter.getpostman.com/view/30578335/2sA3s3GqpS)  
 - 테스트 시나리오 [(바로가기)](https://documenter.getpostman.com/view/30578335/2sA3s3GqpS)  
 <br/>
@@ -100,6 +100,11 @@ _**PAYMENT-SERVICE**_
  
 ## ⚖️ 기술적 의사 결정
 ### Kafka
+초기 프로젝트 설계 시, 대규모 트래픽을 처리하고 선착순 구매를 지원하는 시스템을 설계했다.
+
+그래서 추후 스케일 아웃을 고려하여 로드 밸런싱을 염두에 두고 Kafka를 선택했다.  
+
+비동기 처리를 위해 Kafka로 이벤트를 발행하고, 이를 통해 시스템의 높은 동시성을 유지하며, 트래픽 부하를 효율적으로 분산시킬 수 있도록 설계하였다. Kafka의 비동기 메시징 시스템을 활용함으로써, 결제 처리와 같은 중요한 작업을 병렬로 처리할 수 있어 시스템의 응답성과 확장성을 높일 수 있었다.
 
 ### Redis
 
@@ -124,10 +129,12 @@ _**PAYMENT-SERVICE**_
 - Google SMTP 이메일 인증 처리  [자세히보기](https://jjuya.tistory.com/198)
 
 ### 사용자 인증 인가 작업
-- Spring Security, API Gateway를 통한 사용자 인증 인가 작업
+- Spring Security, API Gateway를 통한 사용자 인증 인가 작업 
+- 모놀리식 Spring security -> MSA API Gateway [자세히보기](https://jjuya.tistory.com/197)
 
-### JWT 토큰 발급
+### JWT 토큰 
 - JWT 토큰 발급을 통한 무상태 인증 시스템 구현  
+
 
 <br/>
 
@@ -319,4 +326,4 @@ _**PAYMENT-SERVICE**_
 
 ### v0.0.1
 2024.08.08
-- [패치]: Docker 환경설정 추가
+- [패치] Docker 환경설정 추가
