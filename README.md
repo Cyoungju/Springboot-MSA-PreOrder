@@ -2,11 +2,12 @@
 **대규모의 트래픽을 처리해 선착순 구매 기능을 지원**하는 E-commerce 서비스  
 일반적인 상품 구매 기능과, 한정된 수량의 상품을 특정 시간에 오픈하여 선착순으로 예약 구매할 수 있는 기능을 제공  
 - 개발 기간 : 2024.08.07 ~ 2024.09.06
+- Docs [(바로가기)]()
 - API 명세서 [(바로가기)](https://documenter.getpostman.com/view/30578335/2sA3s3GqpS)  
-- 테스트 시나리오 [(바로가기)](https://documenter.getpostman.com/view/30578335/2sA3s3GqpS)
+- 테스트 시나리오 [(바로가기)](https://documenter.getpostman.com/view/30578335/2sA3s3GqpS)  
+
 
 ## 목차
-- [Docs](#docs)
 - [프로젝트 아키텍처](#프로젝트-아키텍처)
 - [사용 기술](#사용기술)
 - [구현 기능](#구현기능)
@@ -17,20 +18,14 @@
   - 동시성 문제 해결
   - 사용자 보안 강화
   - 마이크로소프트 간 장애 전파 방지
-- [버전](#버전)
+- [버전](#버전)  
 
-## Docs
-Project Docs [(바로가기)]()  
-API Reference [(바로가기)]()
-
+ 
 ## 프로젝트 아키텍처
 ### ERD 
-<details>
-<summary>자세히보기</summary> 
-
 ![ERD](./img/erd.png)  
-</details>
- 
+
+
 ### 서비스 아키텍처
 ![Architecture](./img/architecture.png)  
 
@@ -63,7 +58,7 @@ API Reference [(바로가기)]()
 
 ### 기타
 <img src="http://img.shields.io/badge/Netflix Eureka-E50914?style=for-the-badge&logo=netflix&logoColor=white">
-<img src="http://img.shields.io/badge/google smtp-4285F4?style=for-the-badge&logo=google&logoColor=white">
+<img src="http://img.shields.io/badge/google smtp-4285F4?style=for-the-badge&logo=google&logoColor=white">  
 
 
 ## 구현기능
@@ -71,6 +66,7 @@ API Reference [(바로가기)]()
 ## 기술적 의사 결정
 
 ## 트러블슈팅
+
 ### 실시간 재고 캐싱 처리
 
 ### kafka 메시징 처리
