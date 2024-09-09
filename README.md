@@ -4,7 +4,7 @@
 
 - 개발 기간 : 2024.08.07 ~ 2024.09.06
 - **프로젝트 블로그** [(바로가기)](https://jjuya.tistory.com/category/%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8/Springboot-MSA-%20PreOrder)
-- API 명세서 [(바로가기)](https://documenter.getpostman.com/view/30578335/2sA3s3GqpS)  
+- API 명세서 [(바로가기)](https://spiky-find-5fd.notion.site/6c0217f78f7a4e7d85303eb0a1a61868?v=e2c2affe7a4c4bbfa494ff6b1d40fb72&pvs=4)  
 - 테스트 시나리오 [(바로가기)](https://documenter.getpostman.com/view/30578335/2sA3s3GqpS)  
 <br/>
 
@@ -50,7 +50,7 @@ _**Netflix OSS (Eureka)**_
 _**USER-SERVICE**_  
 - 유저관리, 마이페이지 관련 담당
 - 유저관리 - 회원가입, 로그인, 로그아웃 
-- 마이페이지 - wishList 조회, wishList상품 추가 및 삭제, 주문 내역 확인, 배송지 등록
+- 마이페이지 - wishList 조회, wishList 상품 추가 및 삭제, 주문 내역 확인, 배송지 등록
 
 _**PRODUCT-SERVICE**_ 
 - 상품 재고, 상태 관리등 상품 관련 담당
