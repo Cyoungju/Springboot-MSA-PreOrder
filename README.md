@@ -75,8 +75,7 @@ _**PAYMENT-SERVICE**_
 <img src="http://img.shields.io/badge/intellijidea-000000?style=for-the-badge&logo=Python&logoColor=white">  
 
 ### 언어 / 프레임워크   
-<img src="http://img.shields.io/badge/java-007396?style=for-the-badge&logo=java&logoColor=white"><img src="http://img.shields.io/badge/JDK 17-000000?style=for-the-badge">  
-<img src="http://img.shields.io/badge/springboot-6DB33F?style=for-the-badge&logo=SPRINGBOOT&logoColor=white"><img src="http://img.shields.io/badge/3.3.2-000000?style=for-the-badge">    <img src="http://img.shields.io/badge/gradle-02303A?style=for-the-badge&logo=gradle&logoColor=white">
+<img src="http://img.shields.io/badge/java-007396?style=for-the-badge&logo=java&logoColor=white"><img src="http://img.shields.io/badge/JDK 17-000000?style=for-the-badge">  <img src="http://img.shields.io/badge/springboot-6DB33F?style=for-the-badge&logo=SPRINGBOOT&logoColor=white"><img src="http://img.shields.io/badge/3.3.2-000000?style=for-the-badge">    <img src="http://img.shields.io/badge/gradle-02303A?style=for-the-badge&logo=gradle&logoColor=white">
 
 
 ### 인증/인가    
