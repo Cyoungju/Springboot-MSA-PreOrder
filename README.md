@@ -75,7 +75,8 @@ _**PAYMENT-SERVICE**_
 <img src="http://img.shields.io/badge/intellijidea-000000?style=for-the-badge&logo=Python&logoColor=white">  
 
 ### 언어 / 프레임워크   
-<img src="http://img.shields.io/badge/java-007396?style=for-the-badge&logo=java&logoColor=white"> <img src="http://img.shields.io/badge/springboot-6DB33F?style=for-the-badge&logo=SPRINGBOOT&logoColor=white">   <img src="http://img.shields.io/badge/gradle-02303A?style=for-the-badge&logo=gradle&logoColor=white">
+<img src="http://img.shields.io/badge/java-007396?style=for-the-badge&logo=java&logoColor=white"><img src="http://img.shields.io/badge/JDK 17-000000?style=for-the-badge">  
+<img src="http://img.shields.io/badge/springboot-6DB33F?style=for-the-badge&logo=SPRINGBOOT&logoColor=white"><img src="http://img.shields.io/badge/3.3.2-000000?style=for-the-badge">    <img src="http://img.shields.io/badge/gradle-02303A?style=for-the-badge&logo=gradle&logoColor=white">
 
 
 ### 인증/인가    
@@ -102,10 +103,8 @@ _**PAYMENT-SERVICE**_
  
 ## ⚖️기술적 의사 결정
 ### **Kafka**
-초기 프로젝트 설계 단계에서 대규모 트래픽을 처리하고 선착순 구매를 지원하는 시스템을 설계하였습니다. 
-
-향후 스케일 아웃을 고려하여 로드 밸런싱을 염두에 두고 Kafka를 선택하였습니다.  
-
+초기 프로젝트 설계 단계에서 대규모 트래픽을 처리하고 선착순 구매를 지원하는 시스템을 설계하였습니다. 향후 스케일 아웃을 고려하여 로드 밸런싱을 염두에 두고 Kafka를 선택하였습니다.  
+  
 이를 통해 비동기 이벤트를 발행하여 높은 동시성을 유지하면서도 추후 트래픽 부하를 효율적으로 분산할 수 있도록 설계했습니다. 
 또한 Kafka를 활용해 결제 처리와 같은 중요한 작업을 병렬로 처리하여 시스템의 응답성과 확장성을 크게 개선할 수 있었습니다.
 
